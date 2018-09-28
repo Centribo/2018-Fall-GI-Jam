@@ -1,0 +1,25 @@
+{
+  "name": "2018-fall-gi-jam",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Centribo/2018-Fall-GI-Jam.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Centribo/2018-Fall-GI-Jam/issues"
+  },
+  "homepage": "https://github.com/Centribo/2018-Fall-GI-Jam#readme",
+  "dependencies": {
+    "express": "^4.16.3",
+    "randomstring": "^1.1.5",
+    "ws": "^6.0.0"
+  }
+}
