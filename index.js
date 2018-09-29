@@ -159,7 +159,8 @@ wss.on("connection", function(ws) {
 function createRoom(){
 	var id = randomstring.generate({
 			length: 5,
-			charset: "alphabetic"
+			charset: "alphabetic",
+			capitalization: "uppercase"
 		});
 
 	var room = {
@@ -172,7 +173,8 @@ function createRoom(){
 	while(rooms[id] != null){
 		id = randomstring.generate({
 			length: 5,
-			charset: "alphabetic"
+			charset: "alphabetic",
+			capitalization: "uppercase"
 		});
 	}
 	room.id = id;
