@@ -1,5 +1,6 @@
 // Canvas stuff
 var vendors = ['webkit', 'moz'];
+var inputBox = document.getElementById("input-box");
 var canvas = document.getElementById('main-canvas'),
 ctx = null,
 fps = 60,
@@ -19,6 +20,7 @@ var gameState = 0;
 var mouseX = 0;
 var mouseY = 0;
 var mousePressed = false;
+var buttons = [];
 
 const GameStates = {
 	ERROR               : -1,
@@ -27,12 +29,14 @@ const GameStates = {
 	WAITING_FOR_START   :  2
 };
 
+// ******************
+// Startup:
+// ******************
 for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
 	window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
 	window.cancelAnimationFrame =
 		window[vendors[x]+'CancelAnimationFrame'] || window[vendors[x]+'CancelRequestAnimationFrame'];
 }
-
 
 if (typeof (canvas.getContext) !== undefined) {
 	ctx = canvas.getContext('2d');
@@ -40,6 +44,9 @@ if (typeof (canvas.getContext) !== undefined) {
 	ctx.canvas.height = window.innerHeight * 0.9;
 	gameLoop();
 }
+var joinButton = new Button(ctx.canvas.width * 0.25, ctx.canvas.height * 0.25, ctx.canvas.width * 0.5, ctx.canvas.height * 0.5, "orange");
+joinButton.onclick = joinGame;
+buttons.push(joinButton);
 
 function gameLoop(){
 	window.requestAnimationFrame(gameLoop);
@@ -54,34 +61,45 @@ function gameLoop(){
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		switch(gameState){
 			case GameStates.WAITING_TO_CONNECT:
-				var x = 50;
-				var y = canvas.height/2;
+				var x = canvas.width/2 - canvas.width*0.25;
+				var y = canvas.height/2 - canvas.height*0.25 - 30;
+				ctx.fillStyle = "#000000";
 				ctx.font = "24px serif";
-				ctx.fillText("Room ID: " + roomID, x, y);
-
+				ctx.fillText("Enter room ID at bottom of page", x, y);
+				ctx.fillStyle = joinButton.colour;
+				ctx.fillRect(joinButton.x, joinButton.y, joinButton.width, joinButton.height);
+				ctx.fillStyle = "#000000";
+				var text = "Connect to Room!";
+				x = canvas.width/2 - (ctx.measureText(text).width/2);
+				y = canvas.height/2;
+				ctx.fillText(text, x, y);
 			break;
 		}
-		
-		
 		lastTime = currentTime - (deltaMilli % interval);
 	}
 }
 
-function onDocumentMouseDown(event) {
+canvas.onmousedown = function(event){
 	// mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	// mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-	mouse.x = event.clientX;
-	mouse.y = event.clientY;
+	mouseX = event.x;
+	mouseY = event.y;
 	mousePressed = true;
 
-	if(mouse.y >= window.innerHeight * 0.9){ //Not in canvas
-		return;
+	// if(mouseY >= window.innerHeight * 0.9){ //Not in canvas
+	// 	return;
+	// }
+	
+	for(i in buttons){
+		if(buttons[i].isInBounds(mouseX, mouseY)){
+			buttons[i].onclick();
+		}
 	}
-	console.log(inputBox.value);
-	joinGame(inputBox.value);
 }
-function onDocumentMouseUp(event) { mousePressed = false; syncframe = 0; }
-function onDocumentMouseMove(event) { }
+canvas.onmouseup = function(event) { mousePressed = false; syncframe = 0; }
+canvas.onmousemove = function(event) { 
+	// console.log(event);
+}
 
 ws.onmessage = function(message) {
 	console.log(message);
@@ -139,11 +157,22 @@ function heartbeat(){
 	sendPing();
 }
 
-function joinGame(roomID){
+function joinGame(roomID = inputBox.value){
 	sendMessage({
 		type: "message",
 		action: "join",
 		source: "player",
 		roomID: roomID
 	});
+	removeButton(joinButton);
+	delete joinButton;
+	gameState = GameStates.CONNECTING;
+}
+
+function removeButton(button){
+	for(i in buttons){
+		if(buttons[i] == button){
+			buttons.splice(i, 1);
+		}
+	}
 }
