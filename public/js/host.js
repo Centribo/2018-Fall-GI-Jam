@@ -18,6 +18,8 @@ function animate() {
 }
 animate();
 
+// Websockets
+var roomID;
 var ws = new WebSocket(location.origin.replace(/^http/, 'ws'), "ottertainment-protocol");
 var heartbeatInterval = 10000;
 
@@ -30,15 +32,27 @@ ws.onmessage = function(message) {
 ws.onopen = function(event){
 	clearInterval(heartbeatInterval);
 	heartbeatInterval = setInterval(heartbeat, heartbeatInterval);
+
+	var urlParams = new URLSearchParams(window.location.search);
+	roomID = urlParams.get("id");
+	sendMessage({
+		type: "message",
+		action: "Join",
+		source: "Host",
+		id: roomID
+	});
 }
 
-function sendMessage(message = document.getElementById("message").value){
+function sendMessage(message){
+	if(typeof message != "string"){
+		message = JSON.stringify(message);
+	}
 	if(ws.readyState != 1){
 		closeConnection();
 		return false;
 	}
 	try {
-		ws.send(JSON.stringify({type: "message", message : message}));
+		ws.send(message);
 	} catch (error){
 		closeConnection();
 	}

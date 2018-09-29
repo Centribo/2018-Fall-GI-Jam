@@ -12,6 +12,11 @@ var publicRoot = __dirname + "/public";
 
 var rooms = {};
 var roomCount = 0;
+const GameStates = {
+	ERROR              : -1,
+	WAITING_FOR_HOST   :  0,
+	WAITING_FOR_PLAYERS:  1
+};
 
 app.use(express.static(publicRoot));
 app.use(bodyParser.json());
@@ -22,10 +27,8 @@ app.get("/", function(req, res){
 });
 app.get("/host/", function(req, res){
 	if(rooms[req.query.id] != null){
-		console.log(new Date() + " Host joining: " + req.query.id);
 		res.sendFile(publicRoot + "/host.html");
 	} else {
-		console.log(new Date() + " Host attempted to join: " + req.query.id);
 		res.sendFile(publicRoot + "/no-room.html");
 	}
 });
@@ -63,9 +66,6 @@ wss.on("connection", function(ws) {
 		ws.close();
 		return;
 	}
-	// var id = setInterval(function() {
-	// 	ws.send(JSON.stringify(new Date()), function() {  });
-	// }, 1000);
 	
 	var id = clientCount++;
 	clients[id] = ws;
@@ -78,6 +78,10 @@ wss.on("connection", function(ws) {
 				console.log(new Date() + " Received ping from [" + id + "]");
 			break;
 			case "message":
+				switch(messageObj.action){
+					case "Join":
+					break;
+				}
 				for(var i in clients){
 					clients[i].send(messageObj.message);
 				}
@@ -100,7 +104,8 @@ function createRoom(){
 
 	var room = {
 		id: id,
-		connectedUsers: []
+		connectedUsers: [],
+		gameState: GameStates.WAITING_FOR_HOST
 	};
 
 	while(rooms[id] != null){
