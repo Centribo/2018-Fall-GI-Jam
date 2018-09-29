@@ -13,9 +13,9 @@ var publicRoot = __dirname + "/public";
 var rooms = {};
 var roomCount = 0;
 const GameStates = {
-	ERROR              : -1,
-	WAITING_FOR_HOST   :  0,
-	WAITING_FOR_PLAYERS:  1
+	ERROR               : -1,
+	WAITING_FOR_PLAYERS :  0,
+	WAITING_FOR_START   :  1
 };
 
 app.use(express.static(publicRoot));
@@ -95,7 +95,7 @@ wss.on("connection", function(ws) {
 									action: "join",
 									source: "server"
 								};
-								if(rooms[msg.roomID].players.length >= 8){
+								if(rooms[msg.roomID].players.length >= 8){ // Too many players
 									response["joined"] = false;
 									response["reason"] = "Too many players";
 
@@ -106,12 +106,18 @@ wss.on("connection", function(ws) {
 									id: id,
 									name: "????"
 								};
+
+								// Add player to room, and add room to player
 								rooms[msg.roomID].players.push(playerEntry);
 								clients[id].room = msg.roomID;
-								clients[id].name = "????";
+								clients[id].name = null;
 								
+								if(rooms[msg.roomID].players.length == 8){
+									rooms[msg.roomID].gameState = GameStates.WAITING_FOR_START;
+								}
 								console.log(new Date() + " Player: " + playerEntry.id +  " joined room: " + msg.roomID);
 								
+								// Send responses
 								response["joined"] = true;
 								response["id"] = id;
 								response["roomID"] = msg.roomID;
