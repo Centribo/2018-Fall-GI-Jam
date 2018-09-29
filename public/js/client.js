@@ -1,40 +1,87 @@
-var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / (window.innerHeight * 0.9), 0.1, 1000 );
-var inputBox;
-var mousePressed;
-var mouse = new THREE.Vector2();
-var raycaster = new THREE.Raycaster();
+// Canvas stuff
+var vendors = ['webkit', 'moz'];
+var canvas = document.getElementById('main-canvas'),
+ctx = null,
+fps = 60,
+interval     =    1000/fps,
+lastTime     =    (new Date()).getTime(),
+currentTime  =    0,
+deltaMilli = 0;
 
-
-
-window.onload = function (){
-	inputBox = document.getElementById("input-box");
-	document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-	document.addEventListener( 'mousedown', onDocumentMouseDown, false );
-	document.addEventListener( 'mouseup', onDocumentMouseUp, false );
-}
-
-var renderer = new THREE.WebGLRenderer();
-renderer.setSize( window.innerWidth, window.innerHeight * 0.9);
-document.body.appendChild( renderer.domElement );
-
-var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-var cube = new THREE.Mesh( geometry, material );
-scene.add( cube );
-
-camera.position.z = 5;
-
-function animate() {
-	requestAnimationFrame(animate);
-	renderer.render(scene, camera);
-}
-animate();
-
+// Websocket stuff
 // Websockets
 var roomID;
 var ws = new WebSocket(location.origin.replace(/^http/, 'ws'), "ottertainment-protocol");
 var heartbeatInterval = 10000;
+
+// Game stuff
+var gameState = 0;
+var mouseX = 0;
+var mouseY = 0;
+var mousePressed = false;
+
+const GameStates = {
+	ERROR               : -1,
+	WAITING_TO_CONNECT  :  0,
+	CONNECTING          :  1,
+	WAITING_FOR_START   :  2
+};
+
+for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+	window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+	window.cancelAnimationFrame =
+		window[vendors[x]+'CancelAnimationFrame'] || window[vendors[x]+'CancelRequestAnimationFrame'];
+}
+
+
+if (typeof (canvas.getContext) !== undefined) {
+	ctx = canvas.getContext('2d');
+	ctx.canvas.width  = window.innerWidth;
+	ctx.canvas.height = window.innerHeight * 0.9;
+	gameLoop();
+}
+
+function gameLoop(){
+	window.requestAnimationFrame(gameLoop);
+	
+	currentTime = (new Date()).getTime();
+	deltaMilli = (currentTime-lastTime);
+	deltaTime = deltaMilli/1000.0;
+
+	x += 1*deltaTime;
+
+	if(deltaMilli > interval) {
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		switch(gameState){
+			case GameStates.WAITING_TO_CONNECT:
+				var x = 50;
+				var y = canvas.height/2;
+				ctx.font = "24px serif";
+				ctx.fillText("Room ID: " + roomID, x, y);
+
+			break;
+		}
+		
+		
+		lastTime = currentTime - (deltaMilli % interval);
+	}
+}
+
+function onDocumentMouseDown(event) {
+	// mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	// mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+	mouse.x = event.clientX;
+	mouse.y = event.clientY;
+	mousePressed = true;
+
+	if(mouse.y >= window.innerHeight * 0.9){ //Not in canvas
+		return;
+	}
+	console.log(inputBox.value);
+	joinGame(inputBox.value);
+}
+function onDocumentMouseUp(event) { mousePressed = false; syncframe = 0; }
+function onDocumentMouseMove(event) { }
 
 ws.onmessage = function(message) {
 	console.log(message);
@@ -100,19 +147,3 @@ function joinGame(roomID){
 		roomID: roomID
 	});
 }
-
-function onDocumentMouseDown(event) {
-	// mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-	// mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-	mouse.x = event.clientX;
-	mouse.y = event.clientY;
-	mousePressed = true;
-
-	if(mouse.y >= window.innerHeight * 0.9){ //Not in canvas
-		return;
-	}
-	console.log(inputBox.value);
-	joinGame(inputBox.value);
-}
-function onDocumentMouseUp(event) { mousePressed = false; syncframe = 0; }
-function onDocumentMouseMove(event) { }

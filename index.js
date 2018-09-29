@@ -10,6 +10,7 @@ var clients = {};
 var clientCount = 0;
 var publicRoot = __dirname + "/public";
 
+var ROOM_SIZE = 8;
 var rooms = {};
 var roomCount = 0;
 const GameStates = {
@@ -95,7 +96,7 @@ wss.on("connection", function(ws) {
 									action: "join",
 									source: "server"
 								};
-								if(rooms[msg.roomID].players.length >= 8){ // Too many players
+								if(rooms[msg.roomID].players.length >= ROOM_SIZE){ // Too many players
 									response["joined"] = false;
 									response["reason"] = "Too many players";
 
@@ -104,7 +105,7 @@ wss.on("connection", function(ws) {
 								}
 								var playerEntry = {
 									id: id,
-									name: "????"
+									name: null
 								};
 
 								// Add player to room, and add room to player
@@ -112,7 +113,7 @@ wss.on("connection", function(ws) {
 								clients[id].room = msg.roomID;
 								clients[id].name = null;
 								
-								if(rooms[msg.roomID].players.length == 8){
+								if(rooms[msg.roomID].players.length == ROOM_SIZE){
 									rooms[msg.roomID].gameState = GameStates.WAITING_FOR_START;
 								}
 								console.log(new Date() + " Player: " + playerEntry.id +  " joined room: " + msg.roomID);
@@ -124,7 +125,7 @@ wss.on("connection", function(ws) {
 								ws.send(JSON.stringify(response));
 
 								if(rooms[msg.roomID].host != null){
-									rooms[msg.roomID].host.send(JSON.stringify(rooms[msg.roomID].players));
+									rooms[msg.roomID].host.send(JSON.stringify(response));
 								}
 							}
 						}
@@ -149,7 +150,16 @@ wss.on("connection", function(ws) {
 			}
 
 			console.log(new Date() + " Player " + id + " left room " + roomID);
-			rooms[roomID].host.send(JSON.stringify(rooms[roomID].players));
+
+			var response = { 
+				type: "message",
+				action: "leave",
+				source: "server",
+				id: id,
+				roomID: roomID
+			};
+
+			rooms[roomID].host.send(JSON.stringify(response));
 		}
 		console.log(new Date() + " Websocket connection closed [" + id + "]");
 		delete clients[id];

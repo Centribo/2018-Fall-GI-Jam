@@ -1,64 +1,5 @@
-// var scene = new THREE.Scene();
-// var camera = new THREE.OrthographicCamera(window.innerWidth/2, window.innerWidth/-2, window.innerHeight/2, window.innerHeight/-2, 0.1, 1000 );
-
-// var renderer = new THREE.WebGLRenderer();
-// renderer.setSize( window.innerWidth, window.innerHeight );
-// document.body.appendChild( renderer.domElement );
-
-// var fontLoader = new THREE.FontLoader();
-// var font = fontLoader.load(
-// 	// resource URL
-// 	'fonts/Sniglet_Regular.json',
-
-// 	// onLoad callback
-// 	function (font) {
-// 		// do something with the font
-// 		var textGeometry = new THREE.TextGeometry("Patrick Sullivan", {
-// 			font: font,
-// 			size: 40,
-// 			height: 15
-// 		});
-// 		var textMaterial = new THREE.MeshBasicMaterial({color: 0x00ff00});
-// 		var textMesh = new THREE.Mesh(textGeometry, textMaterial);
-// 		textMesh.position.z = -1;
-// 		scene.add(textMesh);
-// 	},
-
-// 	// onProgress callback
-// 	function (xhr) {
-// 		console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-// 	},
-
-// 	// onError callback
-// 	function (err) {
-// 		console.log( 'An error happened', err );
-// 	}
-// );
-
-
-
-// function animate() {
-// 	requestAnimationFrame(animate);
-// 	renderer.render( scene, camera );
-// }
-// animate();
-
-// Canvas
-// var canvas = document.getElementById("main-canvas");
-// var ctx = canvas.getContext("2d");
-// ctx.canvas.width  = window.innerWidth;
-// ctx.canvas.height = window.innerHeight;
-
-// ctx.fillStyle = 'rgb(200, 0, 0)';
-// ctx.fillRect(10, 10, 50, 50);
-
+// Canvas stuff
 var vendors = ['webkit', 'moz'];
-for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
-    window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
-    window.cancelAnimationFrame =
-      window[vendors[x]+'CancelAnimationFrame'] || window[vendors[x]+'CancelRequestAnimationFrame'];
-}
-
 var canvas = document.getElementById('main-canvas'),
 ctx = null,
 fps = 60,
@@ -67,14 +8,34 @@ lastTime     =    (new Date()).getTime(),
 currentTime  =    0,
 deltaMilli = 0;
 
+// Websocket stuff
+var roomID;
+var ws = new WebSocket(location.origin.replace(/^http/, 'ws'), "ottertainment-protocol");
+var heartbeatInterval = 10000;
+
+// Game stuff
+var ROOM_SIZE = 8;
+var players = [];
+var gameState = 0;
+const GameStates = {
+	ERROR               : -1,
+	WAITING_FOR_PLAYERS :  0,
+	WAITING_FOR_START   :  1
+};
+
+for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+	window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+	window.cancelAnimationFrame =
+		window[vendors[x]+'CancelAnimationFrame'] || window[vendors[x]+'CancelRequestAnimationFrame'];
+}
+
+
 if (typeof (canvas.getContext) !== undefined) {
 	ctx = canvas.getContext('2d');
 	ctx.canvas.width  = window.innerWidth;
 	ctx.canvas.height = window.innerHeight;
 	gameLoop();
 }
-
-var x = 0;
 
 function gameLoop(){
 	window.requestAnimationFrame(gameLoop);
@@ -87,22 +48,51 @@ function gameLoop(){
 
 	if(deltaMilli > interval) {
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.font = "48px serif"
-		ctx.fillText("Hello World!", x, canvas.height/2);
+		switch(gameState){
+			case GameStates.WAITING_FOR_PLAYERS:
+				var x = 50;
+				var y = canvas.height/2;
+				ctx.font = "24px serif";
+				ctx.fillText("Room ID: " + roomID, x, y);
+				ctx.font = "12px serif";
+				for(i in players){
+					ctx.fillText("[" + players[i].id + "] : " + players[i].name, x, y+24 + (i*12));
+				}
+			break;
+		}
+		
 		
 		lastTime = currentTime - (deltaMilli % interval);
 	}
 }
 
 // Websockets
-var roomID;
-var ws = new WebSocket(location.origin.replace(/^http/, 'ws'), "ottertainment-protocol");
-var heartbeatInterval = 10000;
-
 ws.onmessage = function(message) {
-	console.log(message);
+	// console.log(message);
 	var msg = JSON.parse(message.data);
-	console.log(msg);
+	if(msg.type == "message"){
+		switch(msg.action){
+			case "join":
+				console.log("Player joined: " + msg.id);
+				var playerEntry = {
+					id: msg.id,
+					name: null
+				};
+				players.push(playerEntry);
+			break;
+			case "leave":
+				console.log("Player left: " + msg.id);
+				for(i in players){
+					if(players[i].id == msg.id){
+						players.splice(i, 1);
+					}
+				}
+			break;
+		}
+
+		console.log(players);
+	}
+	// console.log(msg);
 };
 
 ws.onopen = function(event){
