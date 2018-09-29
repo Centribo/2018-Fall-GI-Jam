@@ -25,9 +25,9 @@ function createGame(){
 }
 
 function joinGame(){
-	console.log("Join a game!");
+	window.location = window.location.origin + "/player";
 }
 
 function hostGame(id){
-	window.location = window.location.origin + "/host?id=" + id;
+	window.location = window.location.origin + "/host?roomID=" + id;
 }

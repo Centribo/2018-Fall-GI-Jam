@@ -25,8 +25,8 @@ var heartbeatInterval = 10000;
 
 ws.onmessage = function(message) {
 	console.log(message);
-	var msg = message.data;
-	document.getElementById('chatlog').innerHTML += '<br>' + msg;
+	var msg = JSON.parse(message.data);
+	console.log(msg);
 };
 
 ws.onopen = function(event){
@@ -34,12 +34,12 @@ ws.onopen = function(event){
 	heartbeatInterval = setInterval(heartbeat, heartbeatInterval);
 
 	var urlParams = new URLSearchParams(window.location.search);
-	roomID = urlParams.get("id");
+	roomID = urlParams.get("roomID");
 	sendMessage({
 		type: "message",
-		action: "Join",
-		source: "Host",
-		id: roomID
+		action: "join",
+		source: "host",
+		roomID: roomID
 	});
 }
 

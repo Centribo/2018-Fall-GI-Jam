@@ -26,11 +26,14 @@ app.get("/", function(req, res){
 	res.sendFile(publicRoot + "/landing-page.html");
 });
 app.get("/host/", function(req, res){
-	if(rooms[req.query.id] != null){
+	if(rooms[req.query.roomID] != null){
 		res.sendFile(publicRoot + "/host.html");
 	} else {
 		res.sendFile(publicRoot + "/no-room.html");
 	}
+});
+app.get("/player/", function(req, res){
+	res.sendFile(publicRoot + "/client.html");
 });
 
 // API endpoints
@@ -72,25 +75,74 @@ wss.on("connection", function(ws) {
 	console.log(new Date() + " Accepted connection [" + id + "]");
 
 	ws.on("message", function(message){
-		var messageObj = JSON.parse(message);
-		switch(messageObj.type){
+		var msg = JSON.parse(message);
+		switch(msg.type){
 			case "ping":
 				console.log(new Date() + " Received ping from [" + id + "]");
 			break;
 			case "message":
-				switch(messageObj.action){
-					case "Join":
+				switch(msg.action){
+					case "join":
+						if(rooms[msg.roomID] != null){
+							if(msg.source == "host"){ // Host joining room
+
+								rooms[msg.roomID].host = ws;
+								console.log(new Date() + " Host joined room: " + msg.roomID);
+
+							} else if(msg.source == "player"){ // Player attempts to join room
+								var response = { 
+									type: "message",
+									action: "join",
+									source: "server"
+								};
+								if(rooms[msg.roomID].players.length >= 8){
+									response["joined"] = false;
+									response["reason"] = "Too many players";
+
+									ws.send(JSON.stringify(response));
+									return;
+								}
+								var playerEntry = {
+									id: id,
+									name: "????"
+								};
+								rooms[msg.roomID].players.push(playerEntry);
+								clients[id].room = msg.roomID;
+								clients[id].name = "????";
+								
+								console.log(new Date() + " Player: " + playerEntry.id +  " joined room: " + msg.roomID);
+								
+								response["joined"] = true;
+								response["id"] = id;
+								response["roomID"] = msg.roomID;
+								ws.send(JSON.stringify(response));
+
+								if(rooms[msg.roomID].host != null){
+									rooms[msg.roomID].host.send(JSON.stringify(rooms[msg.roomID].players));
+								}
+							}
+						}
 					break;
 				}
-				for(var i in clients){
-					clients[i].send(messageObj.message);
-				}
+				// for(var i in clients){
+				// 	clients[i].send(msg.message);
+				// }
 			break;
 		}
 
 	});
 	
 	ws.on("close", function() {
+		if(clients[id].room != null){
+			for(i in rooms[clients[id].room].players){
+				if(rooms[clients[id].room].players[i].id == id){
+					// delete rooms[clients[id].room].players[i];
+					rooms[clients[id].room].players.splice(i, 1);
+				}
+			}
+
+			console.log(new Date() + " Player " + id + " left room " + clients[id].room);
+		}
 		console.log(new Date() + " Websocket connection closed [" + id + "]");
 		delete clients[id];
 	});
@@ -104,8 +156,9 @@ function createRoom(){
 
 	var room = {
 		id: id,
-		connectedUsers: [],
-		gameState: GameStates.WAITING_FOR_HOST
+		players: [],
+		gameState: GameStates.WAITING_FOR_HOST,
+		host: null
 	};
 
 	while(rooms[id] != null){
@@ -132,6 +185,16 @@ function createCopy(object){
 	}
 
 	return copy;
+}
+
+function findClient(id){
+	for(i in clients){
+		console.log(clients[i]);
+		if(i == id){
+			return clients[i];
+		}
+	}
+	return null;
 }
 
 // var http = require("http");
