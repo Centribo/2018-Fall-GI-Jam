@@ -133,15 +133,17 @@ wss.on("connection", function(ws) {
 	});
 	
 	ws.on("close", function() {
-		if(clients[id].room != null){
-			for(i in rooms[clients[id].room].players){
-				if(rooms[clients[id].room].players[i].id == id){
-					// delete rooms[clients[id].room].players[i];
-					rooms[clients[id].room].players.splice(i, 1);
+		var roomID = clients[id].room;
+		if(roomID != null){
+			for(i in rooms[roomID].players){
+				if(rooms[roomID].players[i].id == id){
+					// delete rooms[roomID].players[i];
+					rooms[roomID].players.splice(i, 1);
 				}
 			}
 
-			console.log(new Date() + " Player " + id + " left room " + clients[id].room);
+			console.log(new Date() + " Player " + id + " left room " + roomID);
+			rooms[roomID].host.send(JSON.stringify(rooms[roomID].players));
 		}
 		console.log(new Date() + " Websocket connection closed [" + id + "]");
 		delete clients[id];
