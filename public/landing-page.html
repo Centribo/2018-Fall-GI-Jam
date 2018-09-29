@@ -2,10 +2,37 @@
 	<head>
 		<title>Hello World!</title>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/96/three.js"></script>
-		
+		<style>
+			body {
+				margin: 0;
+			}
+
+			#main-grid {
+				height: 100%;
+				display: grid;
+				grid-template-columns: 1fr;
+				grid-template-rows: 1fr 1fr 1fr;
+			}
+
+			#title {
+				justify-self: center;
+				align-self: center;
+				font-size: 50pt;
+			}
+
+			button {
+				font-size: 50pt;
+				justify-self: stretch;
+			}
+		</style>
 	</head>
 	<body>
-		<!-- <script src="./js/host.js"></script> -->
-		This is the landing page.
+		<script src="./js/landing-page.js"></script>
+		<div id="main-grid">
+			<div id="title">Hello World</div>
+			<button onclick="createGame()">Create game</button>
+			<button onclick="joinGame()">Join game</button>
+		</div>
+		
 	</body>
 </html>

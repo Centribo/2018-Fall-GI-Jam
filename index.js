@@ -18,7 +18,7 @@ app.use(express.static(publicRoot));
 app.use(bodyParser.json());
 
 app.get("/", function(req, res){
-	res.sendFile(publicRoot + "/client.html");
+	res.sendFile(publicRoot + "/landing-page.html");
 });
 
 // app.get("/room/:roomID/", function(req, res){

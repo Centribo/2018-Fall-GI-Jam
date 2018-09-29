@@ -1,9 +1,10 @@
 var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / (window.innerHeight * 0.9), 0.1, 1000 );
-console.log(window.innerWidth);
-console.log(window.innerHeight * 0.9);
-console.log(window.innerWidth / window.innerHeight * 0.9);
+var inputBox;
 
+window.onload = function (){
+	inputBox = document.getElementById("input-box");
+}
 
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight * 0.9);
@@ -17,7 +18,8 @@ scene.add( cube );
 camera.position.z = 5;
 
 function animate() {
-	requestAnimationFrame( animate );
-	renderer.render( scene, camera );
+	requestAnimationFrame(animate);
+	renderer.render(scene, camera);
 }
 animate();
+
