@@ -88,6 +88,13 @@ ws.onmessage = function(message) {
 					}
 				}
 			break;
+			case "name-change":
+				for(i in players){
+					if(players[i].id == msg.id){
+						players[i].name = msg.name;
+					}
+				}
+			break;
 		}
 
 		console.log(players);

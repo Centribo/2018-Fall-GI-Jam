@@ -130,6 +130,22 @@ wss.on("connection", function(ws) {
 							}
 						}
 					break;
+					case "name-change":
+						console.log(msg);
+						if(rooms[msg.roomID] != null && msg.source == "player"){
+							if(rooms[msg.roomID].host != null){
+								var response = { 
+									type: "message",
+									action: "name-change",
+									source: "server",
+									roomID: msg.roomID,
+									name: msg.name,
+									id: msg.id
+								};
+								rooms[msg.roomID].host.send(JSON.stringify(response));
+							}
+						}
+					break;
 				}
 				// for(var i in clients){
 				// 	clients[i].send(msg.message);

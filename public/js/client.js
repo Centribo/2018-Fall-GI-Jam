@@ -21,12 +21,15 @@ var mouseX = 0;
 var mouseY = 0;
 var mousePressed = false;
 var buttons = [];
+var name;
+var id;
 
 const GameStates = {
 	ERROR               : -1,
 	WAITING_TO_CONNECT  :  0,
 	CONNECTING          :  1,
-	WAITING_FOR_START   :  2
+	SETTING_NAME        :  2,
+	WAITING_FOR_START   :  3
 };
 
 // ******************
@@ -74,6 +77,22 @@ function gameLoop(){
 				y = canvas.height/2;
 				ctx.fillText(text, x, y);
 			break;
+			case GameStates.SETTING_NAME:
+				var x = canvas.width/2 - canvas.width*0.25;
+				var y = canvas.height/2 - canvas.height*0.25 - 30;
+				ctx.fillStyle = "#000000";
+				ctx.font = "24px serif";
+				ctx.fillText("Enter your name!", x, y);
+				for(i in buttons){
+					ctx.fillStyle = buttons[i].colour;
+					ctx.fillRect(buttons[i].x, buttons[i].y, buttons[i].width, buttons[i].height);
+				}
+				ctx.fillStyle = "#000000";
+				var text = "Set name!";
+				x = canvas.width/2 - (ctx.measureText(text).width/2);
+				y = canvas.height/2;
+				ctx.fillText(text, x, y);
+			break;
 		}
 		lastTime = currentTime - (deltaMilli % interval);
 	}
@@ -102,9 +121,43 @@ canvas.onmousemove = function(event) {
 }
 
 ws.onmessage = function(message) {
-	console.log(message);
 	var msg = JSON.parse(message.data);
 	console.log(msg);
+
+	if(msg.type != "message"){
+		console.log("Unknown message received.");
+		return;
+	}
+
+	if(msg.action == "join"){
+		if(msg.joined){
+			id = msg.id;
+			roomID = msg.roomID;
+			gameState = GameStates.SETTING_NAME;
+			var b = new Button(ctx.canvas.width * 0.25, ctx.canvas.height * 0.25, ctx.canvas.width * 0.5, ctx.canvas.height * 0.5, "#00FF00");
+			b.onclick = function (){
+				var msg = {
+					type: "message",
+					action: "name-change",
+					source: "player",
+					name: inputBox.value,
+					id: id,
+					roomID: roomID
+				};
+				sendMessage(msg);
+				inputBox.value = "";
+				deleteButton(b);
+				gameState = GameStates.WAITING_FOR_START;
+			}
+			buttons.push(b);
+		} else {
+			alert("Room does not exist or room is full, try again.");
+			gameState = GameStates.WAITING_TO_CONNECT;
+			joinButton = new Button(ctx.canvas.width * 0.25, ctx.canvas.height * 0.25, ctx.canvas.width * 0.5, ctx.canvas.height * 0.5, "orange");
+			joinButton.onclick = joinGame;
+			buttons.push(joinButton);
+		}
+	}
 };
 
 ws.onopen = function(event){
@@ -164,14 +217,15 @@ function joinGame(roomID = inputBox.value){
 		source: "player",
 		roomID: roomID
 	});
-	removeButton(joinButton);
-	delete joinButton;
+	deleteButton(joinButton);
 	gameState = GameStates.CONNECTING;
+	inputBox.value = "";
 }
 
-function removeButton(button){
+function deleteButton(button){
 	for(i in buttons){
 		if(buttons[i] == button){
+			delete buttons[i];
 			buttons.splice(i, 1);
 		}
 	}
