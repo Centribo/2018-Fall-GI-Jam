@@ -17,3 +17,73 @@ function animate() {
 	renderer.render( scene, camera );
 }
 animate();
+
+var ws = new WebSocket(location.origin.replace(/^http/, 'ws'), "ottertainment-protocol");
+var heartbeatInterval = 10000;
+
+ws.onmessage = function(message) {
+	console.log(message);
+	var msg = message.data;
+	document.getElementById('chatlog').innerHTML += '<br>' + msg;
+};
+
+ws.onopen = function(event){
+	clearInterval(heartbeatInterval);
+	heartbeatInterval = setInterval(heartbeat, heartbeatInterval);
+}
+
+function sendMessage(message = document.getElementById("message").value){
+	if(ws.readyState != 1){
+		closeConnection();
+		return false;
+	}
+	try {
+		ws.send(JSON.stringify({type: "message", message : message}));
+	} catch (error){
+		closeConnection();
+	}
+}
+
+function sendPing(){
+	var message = {
+		type: "ping",
+		time: Date.now()
+	};
+	if(ws.readyState != 1){
+		closeConnection();
+		return false;
+	}
+	ws.send(JSON.stringify(message));
+}
+
+function closeConnection(){
+	ws.close();
+	clearInterval(heartbeatInterval);
+}
+
+function heartbeat(){
+	sendPing();
+}
+
+// wsServer.on("request", function(req){
+// 	if(req.requestedProtocols.indexOf("protocol-one") <= -1){
+// 		req.reject(404, "Rejected protocol");
+// 		return;
+// 	}
+// 	var connection = req.accept("protocol-one", req.origin);
+// 	var id = clientCount++;
+// 	clients[id] = connection;
+// 	console.log(new Date() + " Accepted connection [" + id + "]");
+
+// 	connection.on("message", function(message){
+// 		var msgString = message.utf8Data;
+// 		for(var i in clients){
+// 			clients[i].sendUTF(msgString);
+// 		}
+// 	});
+
+// 	connection.on("close", function(reason, description){
+// 		delete clients[id];
+// 		console.log(new Date() + " peer " + connection.remoteAddress + " disconnected.");
+// 	});
+// });

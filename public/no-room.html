@@ -1,6 +1,7 @@
 <html>
 	<head>
-		<title>Hello World!</title>
+		<title>Room not found!</title>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/96/three.js"></script>
 		<style>
 			body {
 				margin: 0;
@@ -10,7 +11,7 @@
 				height: 100%;
 				display: grid;
 				grid-template-columns: 1fr;
-				grid-template-rows: 1fr 1fr 1fr;
+				grid-template-rows: 1fr 1fr;
 			}
 
 			#title {
@@ -26,11 +27,10 @@
 		</style>
 	</head>
 	<body>
-		<script src="./js/landing-page.js"></script>
+		<script src="./js/no-room.js"></script>
 		<div id="main-grid">
-			<div id="title">Hello World</div>
-			<button onclick="createGame()">Create game</button>
-			<button onclick="joinGame()">Join game</button>
+			<div id="title">Room not found!</div>
+			<button onclick="goBack()">Go back</button>
 		</div>
 		
 	</body>
