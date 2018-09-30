@@ -14,18 +14,36 @@ var ws = new WebSocket(location.origin.replace(/^http/, 'ws'), "ottertainment-pr
 var heartbeatInterval = 10000;
 
 // Game stuff
-var ROOM_SIZE = 4;
+var ROOM_SIZE = 2;
 var players = [];
+var questionPairs = [];
+var questionNumber = 0;
+var currentQuestion = "????";
+var questionAnswerA = null;
+var questionAnswerB = null;
 var gameState = 0;
 var mouseX = 0;
 var mouseY = 0;
 var mousePressed = false;
 var buttons = [];
+var timer = 0;
+
 const GameStates = {
 	ERROR               : -1,
 	WAITING_FOR_PLAYERS :  0,
-	WAITING_FOR_START   :  1
+	WAITING_FOR_START   :  1,
+	MAP_SCREEN          :  2,
+	PRE_BATTLE          :  3,
+	BATTLE_START        :  4,
+	WAITING_FOR_ANSWERS :  5,
+	WAITING_FOR_VOTES   :  6
 };
+const TimeLimits = {
+	MAP_SCREEN          :  1.0,
+	PRE_BATTLE          :  1.0,
+	BATTLE_START        :  1.0,
+	WAITING_FOR_ANSWERS :  15.0
+}
 
 for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
 	window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
@@ -42,13 +60,14 @@ if (typeof (canvas.getContext) !== undefined) {
 }
 
 function gameLoop(){
+	ctx.canvas.width  = window.innerWidth;
+	ctx.canvas.height = window.innerHeight;
 	window.requestAnimationFrame(gameLoop);
 	
 	currentTime = (new Date()).getTime();
 	deltaMilli = (currentTime-lastTime);
 	deltaTime = deltaMilli/1000.0;
-
-	x += 1*deltaTime;
+	timer += deltaTime;
 
 	if(deltaMilli > interval) {
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -80,13 +99,7 @@ function gameLoop(){
 					gameState = GameStates.WAITING_FOR_START;
 					var b = new Button(0, ctx.canvas.height * 0.9, ctx.canvas.width, ctx.canvas.height * 0.1, "#00FF00");
 					b.onclick = function (){
-						var msg = {
-							type: "message",
-							action: "start-game",
-							source: "host",
-							roomID: roomID
-						};
-						sendMessage(msg);
+						startGame();
 						deleteButton(b);
 					}
 					buttons.push(b);
@@ -118,6 +131,76 @@ function gameLoop(){
 				var x = canvas.width/2 - ctx.measureText(text).width/2;
 				var y = canvas.height*0.95 + 24/2;
 				ctx.fillText(text, x, y);
+			break;
+			case GameStates.MAP_SCREEN:
+				ctx.fillStyle = "#000000";
+				ctx.font = "24px Life-Is-Messy";
+				var text = "MAP SCREEN GOES HERE"
+				var x = canvas.width/2 - ctx.measureText(text).width/2;
+				var y = canvas.height*0.95 + 24/2;
+				ctx.fillText(text, x, y);
+
+				if(timer >= TimeLimits.MAP_SCREEN){
+					timer = 0;
+					gameState = GameStates.PRE_BATTLE;
+				}
+			break;
+			case GameStates.PRE_BATTLE:
+				ctx.fillStyle = "#000000";
+				ctx.font = "24px Life-Is-Messy";
+				var text = "PRE BATTLE SCREEN GOES HERE (Draw otters on map), OTTER #" + questionPairs[questionNumber].playerIDA + " VS OTTER #" + questionPairs[questionNumber].playerIDB;
+				var x = canvas.width/2 - ctx.measureText(text).width/2;
+				var y = canvas.height*0.95 + 24/2;
+				ctx.fillText(text, x, y);
+
+				if(timer >= TimeLimits.PRE_BATTLE){
+					timer = 0;
+					gameState = GameStates.BATTLE_START;
+				}
+			break;
+			case GameStates.BATTLE_START:
+				ctx.fillStyle = "#000000";
+				ctx.font = "24px Life-Is-Messy";
+				var text = "BATTLE START SCREEN GOES HERE (Draw the two otters), OTTER #" + questionPairs[questionNumber].playerIDA + " VS OTTER #" + questionPairs[questionNumber].playerIDB;
+				var x = canvas.width/2 - ctx.measureText(text).width/2;
+				var y = canvas.height*0.95 + 24/2;
+				ctx.fillText(text, x, y);
+
+				if(timer >= TimeLimits.BATTLE_START){
+					sendQuestion(questionNumber);
+					questionNumber ++;
+					timer = 0;
+					gameState = GameStates.WAITING_FOR_ANSWERS;
+				}
+			break;
+			case GameStates.WAITING_FOR_ANSWERS:
+				// Draw question
+				ctx.fillStyle = "#000000";
+				ctx.font = "48px Life-Is-Messy";
+				var text = currentQuestion;
+				var x = canvas.width/2 - ctx.measureText(text).width/2;
+				var y = canvas.height*0.25 - 48/2;
+				ctx.fillText(text, x, y);
+
+				// Draw placeholders
+				text = "?????";
+				x = canvas.width*0.25 - ctx.measureText(text).width/2;
+				y = canvas.height*0.8 - 48/2;
+				ctx.fillText(text, x, y);
+				x = canvas.width*0.75 - ctx.measureText(text).width/2;
+				y = canvas.height*0.8 - 48/2;
+				ctx.fillText(text, x, y);
+
+				// Draw timer
+				text = "" + (TimeLimits.WAITING_FOR_ANSWERS - timer).toFixed(1);
+				x = canvas.width/2 - ctx.measureText(text).width/2;
+				y = canvas.height/2 - 48/2;
+				ctx.fillText(text, x, y);
+				
+				if(timer >= TimeLimits.WAITING_FOR_ANSWERS){
+					timer = 0;
+					gameState = GameStates.WAITING_FOR_VOTES;
+				}
 			break;
 		}
 		
@@ -275,6 +358,74 @@ function getPlayerByPlayerID(playerID){
 	}
 
 	return null;
+}
+
+var questions = [
+	"Fill in the blank: Everyone who knows me know that I _____.",
+	"Fill in the blank: Making games is as easy as _____.",
+	"Fill in the blank: _____ got be fired from my last job.",
+	"Who would make a great president of the United States?",
+	"Who would make a great prime minister of Canada?",
+	"What's the best example of \"the bigger the better\"?",
+	"What's the best topping on pizza?",
+	"What's the best spaghetti sauce?",
+	"Never stick this in your mouth:",
+	"What is something you should never reveal on a first date?"
+];
+
+function startGame(){
+	var msg = {
+		type: "message",
+		action: "start-game",
+		source: "host",
+		roomID: roomID
+	};
+	// sendMessage(msg);
+
+	// Assume ROOM_SIZE is divisible by 2 (we can make pairs)
+	var playerOrder = [];
+	for(let i = 0; i <= ROOM_SIZE-1; i++){
+		playerOrder.push(i);
+	}
+	shuffleArray(playerOrder);
+	shuffleArray(questions);
+	for(let i = 0; i <= ROOM_SIZE/2 - 1; i++){
+		questionPairs.push({
+			playerIDA: playerOrder[i],
+			playerIDB: playerOrder[ROOM_SIZE-1-i],
+			question: questions[i]
+		});
+	}
+	console.log(questionPairs);
+
+	questionNumer = 0;
+	timer = 0;
+	gameState = GameStates.MAP_SCREEN;
+}
+
+// Taken from: https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+function shuffleArray(array) {
+	for (var i = array.length - 1; i > 0; i--) {
+		var j = Math.floor(Math.random() * (i + 1));
+		var temp = array[i];
+		array[i] = array[j];
+		array[j] = temp;
+	}
+}
+
+function sendQuestion(i){
+	// Note, this sends it to all clients, could be optimized to only send to the two players, but whatever KISS
+	var msg = {
+		type: "message",
+		action: "new-question",
+		source: "host",
+		roomID: roomID,
+		playerIDA: questionPairs[i].playerIDA,
+		playerIDB: questionPairs[i].playerIDB,
+		question: questionPairs[i].question
+	};
+	currentQuestion = questionPairs[i].question;
+	sendMessage(msg);
 }
 
 // wsServer.on("request", function(req){

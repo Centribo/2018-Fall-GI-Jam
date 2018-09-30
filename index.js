@@ -10,7 +10,7 @@ var clients = {};
 var clientCount = 0;
 var publicRoot = __dirname + "/public";
 
-var ROOM_SIZE = 4;
+var ROOM_SIZE = 2;
 var rooms = {};
 var roomCount = 0;
 const GameStates = {
@@ -156,7 +156,7 @@ wss.on("connection", function(ws) {
 					break;
 					default: // Forward messages
 						if(msg.source == "host"){
-							if(msg.id != null){
+							if(msg.id != null){ //Send to specific player (This is super gross, but whatever. KISS)
 								msg.source = "server";
 								clients[msg.id].send(JSON.stringify(msg));
 							} else { //Echo to all players

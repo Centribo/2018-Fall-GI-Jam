@@ -24,13 +24,17 @@ var buttons = [];
 var name;
 var id;
 var playerID;
+var currentQuestion = "";
 
 const GameStates = {
 	ERROR               : -1,
 	WAITING_TO_CONNECT  :  0,
 	CONNECTING          :  1,
 	SETTING_NAME        :  2,
-	WAITING_FOR_START   :  3
+	WAITING_FOR_START   :  3,
+	WAIITING            :  4,
+	WAITING_FOR_ANSWER  :  5,
+	VOTING              :  6
 };
 
 // ******************
@@ -53,13 +57,13 @@ joinButton.onclick = joinGame;
 buttons.push(joinButton);
 
 function gameLoop(){
+	ctx.canvas.width  = window.innerWidth;
+	ctx.canvas.height = window.innerHeight;
 	window.requestAnimationFrame(gameLoop);
 	
 	currentTime = (new Date()).getTime();
 	deltaMilli = (currentTime-lastTime);
 	deltaTime = deltaMilli/1000.0;
-
-	x += 1*deltaTime;
 
 	if(deltaMilli > interval) {
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -94,6 +98,7 @@ function gameLoop(){
 				y = canvas.height/2;
 				ctx.fillText(text, x, y);
 			break;
+			case GameStates.WAIITING:
 			case GameStates.WAITING_FOR_START:
 				ctx.fillStyle = "#000000";
 				ctx.font = "48px Life-Is-Messy";
@@ -101,14 +106,18 @@ function gameLoop(){
 				var x = canvas.width/2 - ctx.measureText(text).width/2;
 				var y = canvas.height * 0.2;
 				ctx.fillText(text, x, y);
+
 				// Draw otter
 
 				ctx.fillStyle = "#000000";
 				ctx.font = "48px Life-Is-Messy";
-				text = "Please wait for the game to start.";
+				text = "Please wait...";
 				x = canvas.width/2 - ctx.measureText(text).width/2;
 				y = canvas.height * 0.8;
 				ctx.fillText(text, x, y);
+			break;
+			case GameStates.WAITING_FOR_ANSWER:
+				
 			break;
 		}
 		lastTime = currentTime - (deltaMilli % interval);
@@ -182,6 +191,20 @@ ws.onmessage = function(message) {
 		
 		case "set-player-id":
 			playerID = msg.playerID;
+		break;
+
+		case "new-question":
+			if(playerID == msg.playerIDA || playerID == msg.playerIDB){
+				currentQuestion = msg.question;
+				gameState = GameStates.WAITING_FOR_ANSWER;
+					var b = new Button(0, ctx.canvas.height * 0.9, ctx.canvas.width, ctx.canvas.height * 0.1, "#00FF00");
+					b.onclick = function (){
+						startGame();
+						deleteButton(b);
+					}
+					buttons.push(b);
+				console.log(currentQuestion);
+			}
 		break;
 	} //switch
 }; //onmessage
