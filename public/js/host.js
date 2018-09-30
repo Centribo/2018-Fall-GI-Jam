@@ -24,7 +24,7 @@ var currentQuestionPlayerB = -1;
 var questionAnswerA = null;
 var questionAnswerB = null;
 var votes = {};
-var gameState = 2;
+var gameState = 0;
 var mouseX = 0;
 var mouseY = 0;
 var mousePressed = false;
@@ -57,41 +57,50 @@ mapImage.src = "../art/bg_spaces.png";
 var playerImages = [
 	{
 		face: new Image(),
-		side: new Image()
+		right: new Image(),
+		left: new Image()
 	},
 	{
 		face: new Image(),
-		side: new Image()
+		right: new Image(),
+		left: new Image()
 	},
 	{
 		face: new Image(),
-		side: new Image()
+		right: new Image(),
+		left: new Image()
 	},
 	{
 		face: new Image(),
-		side: new Image()
+		right: new Image(),
+		left: new Image()
 	},
 	{
 		face: new Image(),
-		side: new Image()
+		right: new Image(),
+		left: new Image()
 	},
 	{
 		face: new Image(),
-		side: new Image()
+		right: new Image(),
+		left: new Image()
 	},
 	{
 		face: new Image(),
-		side: new Image()
+		right: new Image(),
+		left: new Image()
 	},
 	{
 		face: new Image(),
-		side: new Image()
+		right: new Image(),
+		left: new Image()
 	}
 ];
 
 for(let i = 0; i < ROOM_SIZE; i++){
 	playerImages[i].face.src = "../art/Character/" + i + "face.png";
-	playerImages[i].side.src = "../art/Character/" + i + "side.png";
+	playerImages[i].right.src = "../art/Character/" + i + "right.png";
+	playerImages[i].left.src = "../art/Character/" + i + "left.png";
 }
 
 for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
@@ -189,11 +198,12 @@ function gameLoop(){
 				ctx.drawImage(mapImage, originX - mapImage.naturalWidth/2, originY - mapImage.naturalHeight/2);
 				ctx.drawImage(playerImages[0].face, originX - 197, originY - 215);
 				ctx.drawImage(playerImages[1].face, originX - 78, originY - 215);
-				ctx.drawImage(playerImages[2].side, originX + 27, originY - 120);
-				ctx.drawImage(playerImages[3].side, originX + 27, originY - 0);
+				ctx.drawImage(playerImages[2].left, originX + 37, originY - 120);
+				ctx.drawImage(playerImages[3].left, originX + 42, originY - 0);
 				ctx.drawImage(playerImages[4].face, originX - 60, originY + 130);
 				ctx.drawImage(playerImages[5].face, originX - 197, originY + 130);
-				
+				ctx.drawImage(playerImages[6].right, originX - 324, originY + 8);
+				ctx.drawImage(playerImages[7].right, originX - 324, originY - 120);
 
 				if(timer >= TimeLimits.MAP_SCREEN){
 					timer = 0;
@@ -544,7 +554,7 @@ var questions = [
 	"Fill in the blank: Everyone who knows me knows that I _____.",
 	"Fill in the blank: Making games is as easy as _____.",
 	"Fill in the blank: _____ got be fired from my last job.",
-	"Who would make a great president of the United States?",
+	"Who would make a great prerightnt of the United States?",
 	"Who would make a great prime minister of Canada?",
 	"What's the best example of \"the bigger the better\"?",
 	"What's the best topping on pizza?",
