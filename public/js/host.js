@@ -14,7 +14,7 @@ var ws = new WebSocket(location.origin.replace(/^http/, 'ws'), "ottertainment-pr
 var heartbeatInterval = 10000;
 
 // Game stuff
-var ROOM_SIZE = 4;
+var ROOM_SIZE = 8;
 var players = [];
 var questionPairs = [];
 var questionNumber = 0;
@@ -133,14 +133,15 @@ function gameLoop(){
 			case GameStates.WAITING_FOR_PLAYERS:
 				ctx.fillStyle = "#000000";
 				ctx.font = "48px Life-Is-Messy";
-				var x = canvas.width/2 - ctx.measureText("Room ID: XXXXX").width/2;
+				var text = "Room ID: " + roomID + " (" + players.length + "/" + ROOM_SIZE + ")";
+				var x = canvas.width/2 - ctx.measureText(text).width/2;
 				var y = canvas.height/2 - 100;
-				ctx.fillText("Room ID: " + roomID, x, y);
+				ctx.fillText(text, x, y);
 				ctx.fillStyle = "#000000";
 				ctx.font = "24px Life-Is-Messy";
 				for(i in players){
 					// var text = "[" + players[i].id + "] : " + players[i].name;
-					var text = "Otter #" + players[i].playerID + ": " + players[i].name + " [" + players[i].id + "]";
+					text = "Otter #" + players[i].playerID + ": " + players[i].name + " [" + players[i].id + "]";
 					x = canvas.width/2 - ctx.measureText(text).width/2;
 					ctx.fillText(text, x, y+30 + (i*26));
 				}
@@ -381,7 +382,7 @@ function gameLoop(){
 				}
 			break;
 
-			case GameStates.GAME_OVER:			
+			case GameStates.GAME_OVER:
 				ctx.fillStyle = "#000000";
 				ctx.font = "24px Life-Is-Messy";
 				var text = "";
@@ -575,7 +576,7 @@ var questions = [
 	"Fill in the blank: Making games is as easy as _____.",
 	"Fill in the blank: In case of emergency _____",
 	"Fill in the blank: University of Waterloo: _____",
-	"Fill in the blank: _____ got be fired from my last job.",
+	"Fill in the blank: _____ got me fired from my last job.",
 	"Who would make a great prerightnt of the United States?",
 	"Who would make a great prime minister of Canada?",
 	"What's the best example of \"the bigger the better\"?",
@@ -670,7 +671,7 @@ function endGame(){
 		roomID: roomID,
 		scores: players
 	});
-	ws.close();
+	closeConnection()
 }
 
 function playerScoreCompare(a, b){

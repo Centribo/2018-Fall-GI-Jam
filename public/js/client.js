@@ -327,7 +327,7 @@ ws.onmessage = function(message) {
 				}
 			}
 			gameState = GameStates.GAME_OVER;
-			ws.close();
+			closeConnection();
 		break;
 	} //switch
 }; //onmessage
