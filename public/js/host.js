@@ -14,7 +14,7 @@ var ws = new WebSocket(location.origin.replace(/^http/, 'ws'), "ottertainment-pr
 var heartbeatInterval = 10000;
 
 // Game stuff
-var ROOM_SIZE = 8;
+var ROOM_SIZE = 4;
 var players = [];
 var questionPairs = [];
 var questionNumber = 0;
@@ -196,15 +196,64 @@ function gameLoop(){
 				var originY = canvas.height/2;
 				ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+				ctx.fillStyle = "#000000";
+				ctx.font = "16px Life-Is-Messy";
 				ctx.drawImage(mapImage, originX - mapImage.naturalWidth/2, originY - mapImage.naturalHeight/2);
-				ctx.drawImage(playerImages[0].face, originX - 197, originY - 215);
-				ctx.drawImage(playerImages[1].face, originX - 78, originY - 215);
-				ctx.drawImage(playerImages[2].left, originX + 37, originY - 120);
-				ctx.drawImage(playerImages[3].left, originX + 42, originY - 0);
-				ctx.drawImage(playerImages[4].face, originX - 60, originY + 130);
-				ctx.drawImage(playerImages[5].face, originX - 197, originY + 130);
-				ctx.drawImage(playerImages[6].right, originX - 324, originY + 8);
-				ctx.drawImage(playerImages[7].right, originX - 324, originY - 120);
+				
+				var p = getPlayerByPlayerID(0);
+				var x = originX - 197;
+				var y = originY - 215;
+				ctx.drawImage(playerImages[0].face, x, y);
+				ctx.fillText(p.name + ": " + p.score, x, y);
+				
+				p = getPlayerByPlayerID(1);
+				x = originX - 78;
+				y = originY - 215;
+				ctx.drawImage(playerImages[1].face, x, y);
+				ctx.fillText(p.name + ": " + p.score, x, y);
+
+				p = getPlayerByPlayerID(2);
+				x = originX + 37;
+				y = originY - 120;
+				ctx.drawImage(playerImages[2].face, x, y);
+				ctx.fillText(p.name + ": " + p.score, x, y);
+				
+				p = getPlayerByPlayerID(3);
+				x = originX + 42;
+				y = originY - 0;
+				ctx.drawImage(playerImages[3].face, x, y);
+				ctx.fillText(p.name + ": " + p.score, x, y);
+
+				p = getPlayerByPlayerID(4);
+				x = originX - 60;
+				y = originY + 130;
+				ctx.drawImage(playerImages[4].face, x, y);
+				ctx.fillText(p.name + ": " + p.score, x, y);
+
+				p = getPlayerByPlayerID(5);
+				x = originX - 197;
+				y = originY + 130;
+				ctx.drawImage(playerImages[5].face, x, y);
+				ctx.fillText(p.name + ": " + p.score, x, y);
+
+				p = getPlayerByPlayerID(6);
+				x = originX - 324;
+				y = originY + 8;
+				ctx.drawImage(playerImages[6].face, x, y);
+				ctx.fillText(p.name + ": " + p.score, x, y);
+
+				p = getPlayerByPlayerID(7);
+				x = originX - 324;
+				y = originY - 120;
+				ctx.drawImage(playerImages[7].face, x, y);
+				ctx.fillText(p.name + ": " + p.score, x, y);
+
+				// ctx.drawImage(playerImages[2].left, originX + 37, originY - 120);
+				// ctx.drawImage(playerImages[3].left, originX + 42, originY - 0);
+				// ctx.drawImage(playerImages[4].face, originX - 60, originY + 130);
+				// ctx.drawImage(playerImages[5].face, originX - 197, originY + 130);
+				// ctx.drawImage(playerImages[6].right, originX - 324, originY + 8);
+				// ctx.drawImage(playerImages[7].right, originX - 324, originY - 120);
 
 				if(timer >= TimeLimits.MAP_SCREEN){
 					timer = 0;
@@ -384,7 +433,7 @@ function gameLoop(){
 
 			case GameStates.GAME_OVER:
 				ctx.fillStyle = "#000000";
-				ctx.font = "24px Life-Is-Messy";
+				ctx.font = "32px Life-Is-Messy";
 				var text = "";
 				var startX = ctx.canvas.width/2;
 				var startY = ctx.canvas.height*0.3;
@@ -398,7 +447,7 @@ function gameLoop(){
 					placement ++;
 					text = "#" + placement + ": " + players[i].name + " with " + players[i].score + " points!";
 					x = (-1) * (ctx.measureText(text).width / 2);
-					y = i * 25;
+					y = i * 38;
 					ctx.fillText(text, startX + x, startY + y);
 				}
 			break;
@@ -658,6 +707,7 @@ function addScore(playerID, score){
 			players[i].score += score;
 		}
 	}
+	players.sort(playerScoreCompare);
 }
 
 function endGame(){

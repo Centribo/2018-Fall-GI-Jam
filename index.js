@@ -10,7 +10,7 @@ var clients = {};
 var clientCount = 0;
 var publicRoot = __dirname + "/public";
 
-var ROOM_SIZE = 8;
+var ROOM_SIZE = 4;
 var rooms = {};
 var roomCount = 0;
 const GameStates = {
@@ -260,80 +260,3 @@ function findClient(id){
 	return null;
 }
 
-// var http = require("http");
-// var WebSocketServer = require("ws").Server;
-// var express = require('express');
-// var path = require("path");
-// var app = express();
-
-// var server = http.createServer(app);
-// var clientCount = 0;
-// var clients = {}; 
-
-// app.use(express.static("public"));
-// app.get('/', function(req, res){
-// 	// res.send("Hello world!");
-// 	res.sendFile(path.join(__dirname + "/index.html"));
-// });
-
-// app.listen(process.env.PORT || 3000, () => console.log('Example app listening on port 80!'));
-
-// var wss = new WebSocketServer({
-// 	server: server
-// });
-
-// console.log("websocket server created");
-
-// wss.on("connection", function(ws) {
-// 	console.log(ws);
-
-// 	var id = setInterval(function() {
-// 		ws.send(JSON.stringify(new Date()), function() {  })
-// 	}, 1000);
-
-// 	console.log("websocket connection open");
-
-// 	ws.on("close", function() {
-// 		console.log("websocket connection close");
-// 		clearInterval(id);
-// 	});
-// })
-
-// server.listen(3000, function(){
-// 	console.log(new Date() + " Server is listening on port 3000!");
-// });
-
-// wsServer = new WebSocketServer({
-// 	httpServer: server
-// });
-
-// wsServer.on("request", function(req){
-// 	if(req.requestedProtocols.indexOf("protocol-one") <= -1){
-// 		req.reject(404, "Rejected protocol");
-// 		return;
-// 	}
-// 	var connection = req.accept("protocol-one", req.origin);
-// 	var id = clientCount++;
-// 	clients[id] = connection;
-// 	console.log(new Date() + " Accepted connection [" + id + "]");
-
-// 	connection.on("message", function(message){
-// 		var msgString = message.utf8Data;
-// 		for(var i in clients){
-// 			clients[i].sendUTF(msgString);
-// 		}
-// 	});
-
-// 	connection.on("close", function(reason, description){
-// 		delete clients[id];
-// 		console.log(new Date() + " peer " + connection.remoteAddress + " disconnected.");
-// 	});
-// });
-
-// app.use(express.static("public"));
-// app.get('/', function(req, res){
-// 	// res.send("Hello world!");
-// 	res.sendFile(path.join(__dirname + "/index.html"));
-// });
-
-// app.listen(process.env.PORT || 80, () => console.log('Example app listening on port 80!'));

@@ -1,0 +1,34 @@
+@font-face {
+	font-family: International-Sunrise;
+	src: url("./../fonts/Sunrise-International-Demo.ttf");
+}
+
+@font-face {
+	font-family: Life-Is-Messy;
+	src: url("./../fonts/KGLifeisMessy.ttf");
+}
+
+
+body {
+	font-family: Life-Is-Messy;
+	margin: 0;
+}
+
+#main-grid {
+	height: 100%;
+	display: grid;
+	grid-template-columns: 1fr;
+	grid-template-rows: 1fr 1fr;
+}
+
+#title {
+	justify-self: center;
+	align-self: center;
+	font-size: 50pt;
+}
+
+button {
+	font-size: 50pt;
+	justify-self: stretch;
+	font-family: International-Sunrise;
+}
