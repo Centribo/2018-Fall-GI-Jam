@@ -14,7 +14,7 @@ var ws = new WebSocket(location.origin.replace(/^http/, 'ws'), "ottertainment-pr
 var heartbeatInterval = 10000;
 
 // Game stuff
-var ROOM_SIZE = 8;
+var ROOM_SIZE = 4;
 var players = [];
 var questionPairs = [];
 var questionNumber = 0;
