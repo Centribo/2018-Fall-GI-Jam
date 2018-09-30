@@ -10,7 +10,7 @@ var clients = {};
 var clientCount = 0;
 var publicRoot = __dirname + "/public";
 
-var ROOM_SIZE = 8;
+var ROOM_SIZE = 2;
 var rooms = {};
 var roomCount = 0;
 const GameStates = {
@@ -103,20 +103,17 @@ wss.on("connection", function(ws) {
 									ws.send(JSON.stringify(response));
 									return;
 								}
-								var playerEntry = {
-									id: id,
-									name: null
-								};
 
+								ws.id = id;
 								// Add player to room, and add room to player
-								rooms[msg.roomID].players.push(playerEntry);
+								rooms[msg.roomID].players.push(ws);
 								clients[id].room = msg.roomID;
 								clients[id].name = null;
 								
 								if(rooms[msg.roomID].players.length == ROOM_SIZE){
 									rooms[msg.roomID].gameState = GameStates.WAITING_FOR_START;
 								}
-								console.log(new Date() + " Player: " + playerEntry.id +  " joined room: " + msg.roomID);
+								console.log(new Date() + " Player: " + id +  " joined room: " + msg.roomID);
 								
 								// Send responses
 								response["joined"] = true;
@@ -128,6 +125,15 @@ wss.on("connection", function(ws) {
 									rooms[msg.roomID].host.send(JSON.stringify(response));
 								}
 							}
+						} else {
+							var response = { 
+								type: "message",
+								action: "join",
+								source: "server",
+								joined: false,
+								reason: "Room does not exist"
+							};
+							ws.send(JSON.stringify(response));
 						}
 					break;
 					case "name-change":
@@ -143,6 +149,15 @@ wss.on("connection", function(ws) {
 									id: msg.id
 								};
 								rooms[msg.roomID].host.send(JSON.stringify(response));
+							}
+						}
+					break;
+					default:
+						if(msg.source == "host"){
+							msg.source = "server";
+							for(i in rooms[msg.roomID].players){
+								console.log(rooms[msg.roomID].players[i]);
+								rooms[msg.roomID].players[i].send(JSON.stringify(msg));
 							}
 						}
 					break;

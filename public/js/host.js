@@ -14,9 +14,13 @@ var ws = new WebSocket(location.origin.replace(/^http/, 'ws'), "ottertainment-pr
 var heartbeatInterval = 10000;
 
 // Game stuff
-var ROOM_SIZE = 8;
+var ROOM_SIZE = 2;
 var players = [];
 var gameState = 0;
+var mouseX = 0;
+var mouseY = 0;
+var mousePressed = false;
+var buttons = [];
 const GameStates = {
 	ERROR               : -1,
 	WAITING_FOR_PLAYERS :  0,
@@ -58,12 +62,77 @@ function gameLoop(){
 				for(i in players){
 					ctx.fillText("[" + players[i].id + "] : " + players[i].name, x, y+24 + (i*12));
 				}
+
+				var playersNamesSet = true;
+				for(i in players){
+					if(players[i].name == null){
+						playersNamesSet = false;
+					}
+				}
+
+				if(players.length >= ROOM_SIZE && playersNamesSet){
+					gameState = GameStates.WAITING_FOR_START;
+					var b = new Button(ctx.canvas.width * 0.25, ctx.canvas.height * 0.25, ctx.canvas.width * 0.5, ctx.canvas.height * 0.5, "#00FF00");
+					b.onclick = function (){
+						var msg = {
+							type: "message",
+							action: "start-game",
+							source: "host",
+							roomID: roomID
+						};
+						sendMessage(msg);
+						deleteButton(b);
+
+					}
+					buttons.push(b);
+				}
+			break;
+			case GameStates.WAITING_FOR_START:
+				var x = 50;
+				var y = canvas.height/2;
+				ctx.font = "24px serif";
+				ctx.fillText("Room ID: " + roomID, x, y);
+				ctx.font = "12px serif";
+				for(i in players){
+					ctx.fillText("[" + players[i].id + "] : " + players[i].name, x, y+24 + (i*12));
+				}
+
+				for(i in buttons){
+					ctx.fillStyle = buttons[i].colour;
+					ctx.fillRect(buttons[i].x, buttons[i].y, buttons[i].width, buttons[i].height);
+				}
+				// ctx.fillStyle = "#000000";
+				// var text = "Set name!";
+				// x = canvas.width/2 - (ctx.measureText(text).width/2);
+				// y = canvas.height/2;
+				// ctx.fillText(text, x, y);
 			break;
 		}
 		
-		
 		lastTime = currentTime - (deltaMilli % interval);
+	}	
+}
+
+canvas.onmousedown = function(event){
+	// mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	// mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+	mouseX = event.x;
+	mouseY = event.y;
+	mousePressed = true;
+
+	// if(mouseY >= window.innerHeight * 0.9){ //Not in canvas
+	// 	return;
+	// }
+	
+	for(i in buttons){
+		if(buttons[i].isInBounds(mouseX, mouseY)){
+			buttons[i].onclick();
+		}
 	}
+}
+canvas.onmouseup = function(event) { mousePressed = false; syncframe = 0; }
+canvas.onmousemove = function(event) { 
+	// console.log(event);
 }
 
 // Websockets
@@ -150,6 +219,15 @@ function closeConnection(){
 
 function heartbeat(){
 	sendPing();
+}
+
+function deleteButton(button){
+	for(i in buttons){
+		if(buttons[i] == button){
+			delete buttons[i];
+			buttons.splice(i, 1);
+		}
+	}
 }
 
 // wsServer.on("request", function(req){

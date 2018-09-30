@@ -158,7 +158,7 @@ ws.onmessage = function(message) {
 			buttons.push(joinButton);
 		}
 	}
-};
+}; //onmessage
 
 ws.onopen = function(event){
 	clearInterval(heartbeatInterval);
@@ -211,6 +211,9 @@ function heartbeat(){
 }
 
 function joinGame(roomID = inputBox.value){
+	if(roomID == ""){
+		return;
+	}
 	sendMessage({
 		type: "message",
 		action: "join",
