@@ -29,6 +29,7 @@ var playerID;
 var placement;
 var score;
 var currentQuestion = "";
+var mainAvatar = new Image();
 
 const GameStates = {
 	ERROR               : -1,
@@ -113,7 +114,10 @@ function gameLoop(){
 				ctx.fillText(text, x, y);
 
 				// Draw otter
-
+				x = canvas.width/2 - mainAvatar.naturalWidth/2;
+				y = canvas.height/2 - mainAvatar.naturalHeight/2;
+				ctx.drawImage(mainAvatar, x, y);
+				
 				ctx.fillStyle = "#000000";
 				ctx.font = "24px Life-Is-Messy";
 				text = "Please wait...";
@@ -176,6 +180,11 @@ function gameLoop(){
 				var x = canvas.width/2 - ctx.measureText(text).width/2;
 				var y = canvas.height * 0.2;
 				ctx.fillText(text, x, y);
+
+				// Draw otter
+				x = canvas.width/2 - mainAvatar.naturalWidth/2;
+				y = canvas.height/2 - mainAvatar.naturalHeight/2;
+				ctx.drawImage(mainAvatar, x, y);
 
 				ctx.fillStyle = "#000000";
 				ctx.font = "48px Life-Is-Messy";
@@ -256,6 +265,7 @@ ws.onmessage = function(message) {
 		
 		case "set-player-id":
 			playerID = msg.playerID;
+			mainAvatar.src = "../art/Character/" + playerID + "face.png";
 		break;
 
 		case "new-question":

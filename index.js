@@ -10,7 +10,7 @@ var clients = {};
 var clientCount = 0;
 var publicRoot = __dirname + "/public";
 
-var ROOM_SIZE = 4;
+var ROOM_SIZE = 2;
 var rooms = {};
 var roomCount = 0;
 const GameStates = {
