@@ -14,7 +14,7 @@ var ws = new WebSocket(location.origin.replace(/^http/, 'ws'), "ottertainment-pr
 var heartbeatInterval = 10000;
 
 // Game stuff
-var ROOM_SIZE = 2;
+var ROOM_SIZE = 8;
 var players = [];
 var questionPairs = [];
 var questionNumber = 0;
@@ -24,13 +24,35 @@ var currentQuestionPlayerB = -1;
 var questionAnswerA = null;
 var questionAnswerB = null;
 var votes = {};
-var gameState = 0;
+var gameState = 2;
 var mouseX = 0;
 var mouseY = 0;
 var mousePressed = false;
 var buttons = [];
 var timer = 0;
 var mapImage = new Image();
+
+const GameStates = {
+	ERROR               : -1,
+	WAITING_FOR_PLAYERS :  0,
+	WAITING_FOR_START   :  1,
+	MAP_SCREEN          :  2,
+	PRE_BATTLE          :  3,
+	BATTLE_START        :  4,
+	WAITING_FOR_ANSWERS :  5,
+	WAITING_FOR_VOTES   :  6,
+	SHOWING_VOTES       :  7,
+	GAME_OVER           :  8
+};
+const TimeLimits = {
+	MAP_SCREEN          :  10.0,
+	PRE_BATTLE          :  1.0,
+	BATTLE_START        :  1.0,
+	WAITING_FOR_ANSWERS :  30.0,
+	WAITING_FOR_VOTES   :  20.0,
+	SHOWING_VOTES       :  10.0
+}
+
 mapImage.src = "../art/bg_spaces.png";
 var playerImages = [
 	{
@@ -72,28 +94,6 @@ for(let i = 0; i < ROOM_SIZE; i++){
 	playerImages[i].side.src = "../art/Character/" + i + "side.png";
 }
 
-
-const GameStates = {
-	ERROR               : -1,
-	WAITING_FOR_PLAYERS :  0,
-	WAITING_FOR_START   :  1,
-	MAP_SCREEN          :  2,
-	PRE_BATTLE          :  3,
-	BATTLE_START        :  4,
-	WAITING_FOR_ANSWERS :  5,
-	WAITING_FOR_VOTES   :  6,
-	SHOWING_VOTES       :  7,
-	GAME_OVER           :  8
-};
-const TimeLimits = {
-	MAP_SCREEN          :  10.0,
-	PRE_BATTLE          :  1.0,
-	BATTLE_START        :  1.0,
-	WAITING_FOR_ANSWERS :  30.0,
-	WAITING_FOR_VOTES   :  20.0,
-	SHOWING_VOTES       :  10.0
-}
-
 for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
 	window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
 	window.cancelAnimationFrame =
@@ -127,7 +127,6 @@ function gameLoop(){
 				var x = canvas.width/2 - ctx.measureText("Room ID: XXXXX").width/2;
 				var y = canvas.height/2 - 100;
 				ctx.fillText("Room ID: " + roomID, x, y);
-
 				ctx.fillStyle = "#000000";
 				ctx.font = "24px Life-Is-Messy";
 				for(i in players){
@@ -188,6 +187,13 @@ function gameLoop(){
 				ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 				ctx.drawImage(mapImage, originX - mapImage.naturalWidth/2, originY - mapImage.naturalHeight/2);
+				ctx.drawImage(playerImages[0].face, originX - 197, originY - 215);
+				ctx.drawImage(playerImages[1].face, originX - 78, originY - 215);
+				ctx.drawImage(playerImages[2].side, originX + 27, originY - 120);
+				ctx.drawImage(playerImages[3].side, originX + 27, originY - 0);
+				ctx.drawImage(playerImages[4].face, originX - 60, originY + 130);
+				ctx.drawImage(playerImages[5].face, originX - 197, originY + 130);
+				
 
 				if(timer >= TimeLimits.MAP_SCREEN){
 					timer = 0;
