@@ -14,7 +14,7 @@ var ws = new WebSocket(location.origin.replace(/^http/, 'ws'), "ottertainment-pr
 var heartbeatInterval = 10000;
 
 // Game stuff
-var ROOM_SIZE = 2;
+var ROOM_SIZE = 4;
 var players = [];
 var gameState = 0;
 var mouseX = 0;
@@ -54,13 +54,19 @@ function gameLoop(){
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		switch(gameState){
 			case GameStates.WAITING_FOR_PLAYERS:
-				var x = 50;
-				var y = canvas.height/2;
-				ctx.font = "24px serif";
+				ctx.fillStyle = "#000000";
+				ctx.font = "48px Life-Is-Messy";
+				var x = canvas.width/2 - ctx.measureText("Room ID: XXXXX").width/2;
+				var y = canvas.height/2 - 100;
 				ctx.fillText("Room ID: " + roomID, x, y);
-				ctx.font = "12px serif";
+
+				ctx.fillStyle = "#000000";
+				ctx.font = "24px Life-Is-Messy";
 				for(i in players){
-					ctx.fillText("[" + players[i].id + "] : " + players[i].name, x, y+24 + (i*12));
+					// var text = "[" + players[i].id + "] : " + players[i].name;
+					var text = "Otter #" + players[i].playerID + ": " + players[i].name + " [" + players[i].id + "]";
+					x = canvas.width/2 - ctx.measureText(text).width/2;
+					ctx.fillText(text, x, y+30 + (i*26));
 				}
 
 				var playersNamesSet = true;
@@ -72,7 +78,7 @@ function gameLoop(){
 
 				if(players.length >= ROOM_SIZE && playersNamesSet){
 					gameState = GameStates.WAITING_FOR_START;
-					var b = new Button(ctx.canvas.width * 0.25, ctx.canvas.height * 0.25, ctx.canvas.width * 0.5, ctx.canvas.height * 0.5, "#00FF00");
+					var b = new Button(0, ctx.canvas.height * 0.9, ctx.canvas.width, ctx.canvas.height * 0.1, "#00FF00");
 					b.onclick = function (){
 						var msg = {
 							type: "message",
@@ -82,30 +88,36 @@ function gameLoop(){
 						};
 						sendMessage(msg);
 						deleteButton(b);
-
 					}
 					buttons.push(b);
 				}
 			break;
 			case GameStates.WAITING_FOR_START:
-				var x = 50;
-				var y = canvas.height/2;
-				ctx.font = "24px serif";
+				ctx.fillStyle = "#000000";
+				ctx.font = "48px Life-Is-Messy";
+				var x = canvas.width/2 - ctx.measureText("Room ID: XXXXX").width/2;
+				var y = canvas.height/2 - 100;
 				ctx.fillText("Room ID: " + roomID, x, y);
-				ctx.font = "12px serif";
+
+				ctx.fillStyle = "#000000";
+				ctx.font = "24px Life-Is-Messy";
 				for(i in players){
-					ctx.fillText("[" + players[i].id + "] : " + players[i].name, x, y+24 + (i*12));
+					// var text = "[" + players[i].id + "] : " + players[i].name;
+					var text = "Otter #" + players[i].playerID + ": " + players[i].name + " [" + players[i].id + "]";
+					x = canvas.width/2 - ctx.measureText(text).width/2;
+					ctx.fillText(text, x, y+30 + (i*26));
 				}
 
 				for(i in buttons){
 					ctx.fillStyle = buttons[i].colour;
 					ctx.fillRect(buttons[i].x, buttons[i].y, buttons[i].width, buttons[i].height);
 				}
-				// ctx.fillStyle = "#000000";
-				// var text = "Set name!";
-				// x = canvas.width/2 - (ctx.measureText(text).width/2);
-				// y = canvas.height/2;
-				// ctx.fillText(text, x, y);
+				ctx.fillStyle = "#000000";
+				ctx.font = "24px Life-Is-Messy";
+				var text = "Start!"
+				var x = canvas.width/2 - ctx.measureText(text).width/2;
+				var y = canvas.height*0.95 + 24/2;
+				ctx.fillText(text, x, y);
 			break;
 		}
 		
@@ -142,12 +154,33 @@ ws.onmessage = function(message) {
 	if(msg.type == "message"){
 		switch(msg.action){
 			case "join":
-				console.log("Player joined: " + msg.id);
+				if(players.length >= ROOM_SIZE){
+					return;
+				}
+
+				var playerID = getRandomInt(0, ROOM_SIZE);
+				var p = getPlayerByPlayerID(playerID);
+				while(p != null){
+					playerID = getRandomInt(0, ROOM_SIZE);
+					p = getPlayerByPlayerID(playerID);
+				}
+				
 				var playerEntry = {
 					id: msg.id,
-					name: null
+					name: null,
+					playerID: playerID
 				};
 				players.push(playerEntry);
+
+				console.log("Player joined: " + msg.id + ", given playerID: " + playerID);
+				sendMessage({
+					type: "message",
+					action: "set-player-id",
+					source: "host",
+					roomID: roomID,
+					id: msg.id,
+					playerID: playerID
+				});
 			break;
 			case "leave":
 				console.log("Player left: " + msg.id);
@@ -228,6 +261,20 @@ function deleteButton(button){
 			buttons.splice(i, 1);
 		}
 	}
+}
+
+function getRandomInt(min, max) {
+	return Math.floor(Math.random() * (max - min) ) + min;
+}
+
+function getPlayerByPlayerID(playerID){
+	for(i in players){
+		if(players[i].playerID == playerID){
+			return players[i];
+		}
+	}
+
+	return null;
 }
 
 // wsServer.on("request", function(req){

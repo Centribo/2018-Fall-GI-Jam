@@ -10,7 +10,7 @@ var clients = {};
 var clientCount = 0;
 var publicRoot = __dirname + "/public";
 
-var ROOM_SIZE = 2;
+var ROOM_SIZE = 4;
 var rooms = {};
 var roomCount = 0;
 const GameStates = {
@@ -121,7 +121,7 @@ wss.on("connection", function(ws) {
 								response["roomID"] = msg.roomID;
 								ws.send(JSON.stringify(response));
 
-								if(rooms[msg.roomID].host != null){
+								if(rooms[msg.roomID].host != null && rooms[msg.roomID].host.readyState == 1){
 									rooms[msg.roomID].host.send(JSON.stringify(response));
 								}
 							}
@@ -148,17 +148,24 @@ wss.on("connection", function(ws) {
 									name: msg.name,
 									id: msg.id
 								};
-								rooms[msg.roomID].host.send(JSON.stringify(response));
+								if(rooms[msg.roomID].host.readyState == 1){
+									rooms[msg.roomID].host.send(JSON.stringify(response));
+								}
 							}
 						}
 					break;
-					default:
+					default: // Forward messages
 						if(msg.source == "host"){
-							msg.source = "server";
-							for(i in rooms[msg.roomID].players){
-								console.log(rooms[msg.roomID].players[i]);
-								rooms[msg.roomID].players[i].send(JSON.stringify(msg));
+							if(msg.id != null){
+								msg.source = "server";
+								clients[msg.id].send(JSON.stringify(msg));
+							} else { //Echo to all players
+								msg.source = "server";
+								for(i in rooms[msg.roomID].players){
+									rooms[msg.roomID].players[i].send(JSON.stringify(msg));
+								}
 							}
+							
 						}
 					break;
 				}
@@ -189,8 +196,9 @@ wss.on("connection", function(ws) {
 				id: id,
 				roomID: roomID
 			};
-
-			rooms[roomID].host.send(JSON.stringify(response));
+			if(rooms[roomID].host.readyState == 1){
+				rooms[roomID].host.send(JSON.stringify(response));
+			}
 		}
 		console.log(new Date() + " Websocket connection closed [" + id + "]");
 		delete clients[id];

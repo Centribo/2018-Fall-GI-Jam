@@ -23,6 +23,7 @@ var mousePressed = false;
 var buttons = [];
 var name;
 var id;
+var playerID;
 
 const GameStates = {
 	ERROR               : -1,
@@ -67,7 +68,7 @@ function gameLoop(){
 				var x = canvas.width/2 - canvas.width*0.25;
 				var y = canvas.height/2 - canvas.height*0.25 - 30;
 				ctx.fillStyle = "#000000";
-				ctx.font = "24px serif";
+				ctx.font = "24px Life-Is-Messy";
 				ctx.fillText("Enter room ID at bottom of page", x, y);
 				ctx.fillStyle = joinButton.colour;
 				ctx.fillRect(joinButton.x, joinButton.y, joinButton.width, joinButton.height);
@@ -81,7 +82,7 @@ function gameLoop(){
 				var x = canvas.width/2 - canvas.width*0.25;
 				var y = canvas.height/2 - canvas.height*0.25 - 30;
 				ctx.fillStyle = "#000000";
-				ctx.font = "24px serif";
+				ctx.font = "24px Life-Is-Messy";
 				ctx.fillText("Enter your name!", x, y);
 				for(i in buttons){
 					ctx.fillStyle = buttons[i].colour;
@@ -91,6 +92,22 @@ function gameLoop(){
 				var text = "Set name!";
 				x = canvas.width/2 - (ctx.measureText(text).width/2);
 				y = canvas.height/2;
+				ctx.fillText(text, x, y);
+			break;
+			case GameStates.WAITING_FOR_START:
+				ctx.fillStyle = "#000000";
+				ctx.font = "48px Life-Is-Messy";
+				var text = name + ", you are otter #" + playerID;
+				var x = canvas.width/2 - ctx.measureText(text).width/2;
+				var y = canvas.height * 0.2;
+				ctx.fillText(text, x, y);
+				// Draw otter
+
+				ctx.fillStyle = "#000000";
+				ctx.font = "48px Life-Is-Messy";
+				text = "Please wait for the game to start.";
+				x = canvas.width/2 - ctx.measureText(text).width/2;
+				y = canvas.height * 0.8;
 				ctx.fillText(text, x, y);
 			break;
 		}
@@ -128,36 +145,45 @@ ws.onmessage = function(message) {
 		console.log("Unknown message received.");
 		return;
 	}
-
-	if(msg.action == "join"){
-		if(msg.joined){
-			id = msg.id;
-			roomID = msg.roomID;
-			gameState = GameStates.SETTING_NAME;
-			var b = new Button(ctx.canvas.width * 0.25, ctx.canvas.height * 0.25, ctx.canvas.width * 0.5, ctx.canvas.height * 0.5, "#00FF00");
-			b.onclick = function (){
-				var msg = {
-					type: "message",
-					action: "name-change",
-					source: "player",
-					name: inputBox.value,
-					id: id,
-					roomID: roomID
-				};
-				sendMessage(msg);
-				inputBox.value = "";
-				deleteButton(b);
-				gameState = GameStates.WAITING_FOR_START;
+	switch(msg.action){
+		case "join":
+			if(msg.joined){
+				id = msg.id;
+				roomID = msg.roomID;
+				gameState = GameStates.SETTING_NAME;
+				var b = new Button(ctx.canvas.width * 0.25, ctx.canvas.height * 0.25, ctx.canvas.width * 0.5, ctx.canvas.height * 0.5, "#00FF00");
+				b.onclick = function (){
+					if(inputBox.value == ""){
+						return;
+					}
+					name = inputBox.value;
+					var msg = {
+						type: "message",
+						action: "name-change",
+						source: "player",
+						name: name,
+						id: id,
+						roomID: roomID
+					};
+					sendMessage(msg);
+					inputBox.value = "";
+					deleteButton(b);
+					gameState = GameStates.WAITING_FOR_START;
+				}
+				buttons.push(b);
+			} else {
+				alert("Room does not exist or room is full, try again.");
+				gameState = GameStates.WAITING_TO_CONNECT;
+				joinButton = new Button(ctx.canvas.width * 0.25, ctx.canvas.height * 0.25, ctx.canvas.width * 0.5, ctx.canvas.height * 0.5, "orange");
+				joinButton.onclick = joinGame;
+				buttons.push(joinButton);
 			}
-			buttons.push(b);
-		} else {
-			alert("Room does not exist or room is full, try again.");
-			gameState = GameStates.WAITING_TO_CONNECT;
-			joinButton = new Button(ctx.canvas.width * 0.25, ctx.canvas.height * 0.25, ctx.canvas.width * 0.5, ctx.canvas.height * 0.5, "orange");
-			joinButton.onclick = joinGame;
-			buttons.push(joinButton);
-		}
-	}
+		break;
+		
+		case "set-player-id":
+			playerID = msg.playerID;
+		break;
+	} //switch
 }; //onmessage
 
 ws.onopen = function(event){
