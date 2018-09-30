@@ -573,6 +573,8 @@ function getPlayerByPlayerID(playerID){
 var questions = [
 	"Fill in the blank: Everyone who knows me knows that I _____.",
 	"Fill in the blank: Making games is as easy as _____.",
+	"Fill in the blank: In case of emergency _____",
+	"Fill in the blank: University of Waterloo: _____",
 	"Fill in the blank: _____ got be fired from my last job.",
 	"Who would make a great prerightnt of the United States?",
 	"Who would make a great prime minister of Canada?",
@@ -581,7 +583,15 @@ var questions = [
 	"What's the best spaghetti sauce?",
 	"Never stick this in your mouth:",
 	"What is something you should never reveal on a first date?",
-	"Best place to eat in Waterloo:"
+	"Best place to eat in Waterloo:",
+	"What makes the goose so amazing?",
+	"What is the secret to a happy life?",
+	"Name of a game no one should play:",
+	"A better name for University of Waterloo:",
+	"A better name for America:",
+	"A better name for Canada:",
+	"Name of a new invention that ends with \"-kajigger\"",
+	"Name of a new invention that starts with \"Automatic\""
 ];
 
 function startGame(){
