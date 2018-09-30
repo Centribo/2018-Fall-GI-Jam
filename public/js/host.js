@@ -46,7 +46,7 @@ const GameStates = {
 };
 const TimeLimits = {
 	MAP_SCREEN          :  10.0,
-	PRE_BATTLE          :  15.0,
+	PRE_BATTLE          :  10.0,
 	BATTLE_START        :  1.0,
 	WAITING_FOR_ANSWERS :  30.0,
 	WAITING_FOR_VOTES   :  20.0,
@@ -226,9 +226,9 @@ function gameLoop(){
 
 				ctx.fillStyle = "#FFFFFF";
 				ctx.font = "48px Life-Is-Messy";
-				var text = "VS";
+				var text = getPlayerByPlayerID(idA).name + " VS " + getPlayerByPlayerID(idB).name;
 				var x = originX - ctx.measureText(text).width/2;
-				var y = originY + 48;
+				var y = originY - 100;
 				ctx.fillText(text, x, y);
 
 				// ctx.fillStyle = "#000000";
@@ -580,7 +580,8 @@ var questions = [
 	"What's the best topping on pizza?",
 	"What's the best spaghetti sauce?",
 	"Never stick this in your mouth:",
-	"What is something you should never reveal on a first date?"
+	"What is something you should never reveal on a first date?",
+	"Best place to eat in Waterloo:"
 ];
 
 function startGame(){
