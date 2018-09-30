@@ -14,7 +14,7 @@ var ws = new WebSocket(location.origin.replace(/^http/, 'ws'), "ottertainment-pr
 var heartbeatInterval = 10000;
 
 // Game stuff
-var ROOM_SIZE = 8;
+var ROOM_SIZE = 2;
 var players = [];
 var questionPairs = [];
 var questionNumber = 0;
@@ -46,7 +46,7 @@ const GameStates = {
 };
 const TimeLimits = {
 	MAP_SCREEN          :  10.0,
-	PRE_BATTLE          :  1.0,
+	PRE_BATTLE          :  15.0,
 	BATTLE_START        :  1.0,
 	WAITING_FOR_ANSWERS :  30.0,
 	WAITING_FOR_VOTES   :  20.0,
@@ -211,12 +211,32 @@ function gameLoop(){
 				}
 			break;
 			case GameStates.PRE_BATTLE:
-				ctx.fillStyle = "#000000";
-				ctx.font = "24px Life-Is-Messy";
-				var text = "PRE BATTLE SCREEN GOES HERE (Draw otters on map), OTTER #" + questionPairs[questionNumber].playerIDA + " VS OTTER #" + questionPairs[questionNumber].playerIDB;
-				var x = canvas.width/2 - ctx.measureText(text).width/2;
-				var y = canvas.height*0.95 + 24/2;
+				ctx.fillStyle = "#116DD0";
+				var originX = canvas.width/2;
+				var originY = canvas.height/2;
+				ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+				var idA = questionPairs[questionNumber].playerIDA;
+				var idB = questionPairs[questionNumber].playerIDB;
+				var imageA = playerImages[idA].left;
+				var imageB = playerImages[idB].right;
+				var scale = 100;
+				ctx.drawImage(imageA, originX + 300, originY, 100, scale * imageA.naturalHeight / imageA.naturalWidth);
+				ctx.drawImage(imageB, originX - 300, originY, 100, scale * imageB.naturalHeight / imageB.naturalWidth);
+
+				ctx.fillStyle = "#FFFFFF";
+				ctx.font = "48px Life-Is-Messy";
+				var text = "VS";
+				var x = originX - ctx.measureText(text).width/2;
+				var y = originY + 48;
 				ctx.fillText(text, x, y);
+
+				// ctx.fillStyle = "#000000";
+				// ctx.font = "24px Life-Is-Messy";
+				// var text = "PRE BATTLE SCREEN GOES HERE (Draw otters on map), OTTER #" + questionPairs[questionNumber].playerIDA + " VS OTTER #" + questionPairs[questionNumber].playerIDB;
+				// var x = canvas.width/2 - ctx.measureText(text).width/2;
+				// var y = canvas.height*0.95 + 24/2;
+				// ctx.fillText(text, x, y);
 
 				if(timer >= TimeLimits.PRE_BATTLE){
 					timer = 0;
