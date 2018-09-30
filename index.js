@@ -10,7 +10,7 @@ var clients = {};
 var clientCount = 0;
 var publicRoot = __dirname + "/public";
 
-var ROOM_SIZE = 2;
+var ROOM_SIZE = 4;
 var rooms = {};
 var roomCount = 0;
 const GameStates = {
@@ -165,7 +165,11 @@ wss.on("connection", function(ws) {
 									rooms[msg.roomID].players[i].send(JSON.stringify(msg));
 								}
 							}
-							
+						} else if(msg.source == "player"){
+							msg.source = "server";
+							if(rooms[msg.roomID].host != null && rooms[msg.roomID].host.readyState == 1){
+								rooms[msg.roomID].host.send(JSON.stringify(msg));
+							}
 						}
 					break;
 				}

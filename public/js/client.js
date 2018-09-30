@@ -19,6 +19,8 @@ var heartbeatInterval = 10000;
 var gameState = 0;
 var mouseX = 0;
 var mouseY = 0;
+var answerA = "";
+var answerB = "";
 var mousePressed = false;
 var buttons = [];
 var name;
@@ -32,7 +34,7 @@ const GameStates = {
 	CONNECTING          :  1,
 	SETTING_NAME        :  2,
 	WAITING_FOR_START   :  3,
-	WAIITING            :  4,
+	WAITING            :  4,
 	WAITING_FOR_ANSWER  :  5,
 	VOTING              :  6
 };
@@ -57,8 +59,8 @@ joinButton.onclick = joinGame;
 buttons.push(joinButton);
 
 function gameLoop(){
-	ctx.canvas.width  = window.innerWidth;
-	ctx.canvas.height = window.innerHeight;
+	// ctx.canvas.width  = window.innerWidth;
+	// ctx.canvas.height = window.innerHeight;
 	window.requestAnimationFrame(gameLoop);
 	
 	currentTime = (new Date()).getTime();
@@ -98,7 +100,7 @@ function gameLoop(){
 				y = canvas.height/2;
 				ctx.fillText(text, x, y);
 			break;
-			case GameStates.WAIITING:
+			case GameStates.WAITING:
 			case GameStates.WAITING_FOR_START:
 				ctx.fillStyle = "#000000";
 				ctx.font = "48px Life-Is-Messy";
@@ -110,14 +112,46 @@ function gameLoop(){
 				// Draw otter
 
 				ctx.fillStyle = "#000000";
-				ctx.font = "48px Life-Is-Messy";
+				ctx.font = "24px Life-Is-Messy";
 				text = "Please wait...";
 				x = canvas.width/2 - ctx.measureText(text).width/2;
 				y = canvas.height * 0.8;
 				ctx.fillText(text, x, y);
 			break;
 			case GameStates.WAITING_FOR_ANSWER:
+				ctx.fillStyle = "#000000";
+				ctx.font = "24px Life-Is-Messy";
+				var text = currentQuestion;
+				var x = canvas.width/2 - ctx.measureText(text).width/2;
+				var y = canvas.height/2 - canvas.height*0.25 - 30;
+				ctx.fillText(text, x, y);
 				
+				for(i in buttons){
+					ctx.fillStyle = buttons[i].colour;
+					ctx.fillRect(buttons[i].x, buttons[i].y, buttons[i].width, buttons[i].height);
+				}
+
+				ctx.fillStyle = "#000000";
+				ctx.font = "48px Life-Is-Messy";
+				text = "Submit";
+				x = canvas.width/2 - ctx.measureText(text).width/2;
+				y = canvas.height/2 + 48/2;
+				ctx.fillText(text, x, y);
+			break;
+
+			case GameStates.VOTING:
+				ctx.fillStyle = "#000000";
+				ctx.font = "24px Life-Is-Messy";
+				var text = "Vote: " + currentQuestion;
+				var x = canvas.width/2 - ctx.measureText(text).width/2;
+				var y = canvas.height*0.1 + 24/2;
+				ctx.fillText(text, x, y);
+
+				for(i in buttons){
+					ctx.fillStyle = buttons[i].colour;
+					ctx.fillRect(buttons[i].x, buttons[i].y, buttons[i].width, buttons[i].height);
+				}
+
 			break;
 		}
 		lastTime = currentTime - (deltaMilli % interval);
@@ -197,13 +231,41 @@ ws.onmessage = function(message) {
 			if(playerID == msg.playerIDA || playerID == msg.playerIDB){
 				currentQuestion = msg.question;
 				gameState = GameStates.WAITING_FOR_ANSWER;
-					var b = new Button(0, ctx.canvas.height * 0.9, ctx.canvas.width, ctx.canvas.height * 0.1, "#00FF00");
+					var b = new Button(ctx.canvas.width * 0.25, ctx.canvas.height * 0.25, ctx.canvas.width * 0.5, ctx.canvas.height * 0.5, "#00FF00");
 					b.onclick = function (){
-						startGame();
+						if(inputBox.value == ""){
+							return;
+						}
+						submitAnswer();
 						deleteButton(b);
-					}
+					};
 					buttons.push(b);
 				console.log(currentQuestion);
+			}
+		break;
+
+		case "end-question":
+			inputBox.value = "";
+			buttons = [];
+			// if(playerID == msg.playerIDA || playerID == msg.playerIDB){
+			if(false){
+				gameState = GameStates.WAITING;
+			} else {
+				answerA = msg.answerA;
+				answerB = msg.answerB;
+				currentQuestion = msg.question;
+				gameState = GameStates.VOTING;
+
+				var a = new Button(ctx.canvas.width * 0.25, ctx.canvas.height * 0.2, ctx.canvas.width * 0.5, ctx.canvas.height * 0.3, "#E1BF9B");
+				a.onclick = function (){
+					submitVote(msg.playerIDA);
+				};
+				buttons.push(a);
+				var b = new Button(ctx.canvas.width * 0.25, ctx.canvas.height * 0.2 + ctx.canvas.height * 0.3, ctx.canvas.width * 0.5, ctx.canvas.height * 0.3, "#58340C");
+				b.onclick = function (){
+					submitVote(msg.playerIDB);
+				};
+				buttons.push(b);
 			}
 		break;
 	} //switch
@@ -281,4 +343,22 @@ function deleteButton(button){
 			buttons.splice(i, 1);
 		}
 	}
+}
+
+function submitAnswer(){
+	var answer = inputBox.value;
+	sendMessage({
+		type: "message",
+		action: "answer",
+		source: "player",
+		roomID: roomID,
+		playerID: playerID,
+		answer: answer
+	});
+	inputBox.value = "";
+	gameState = GameStates.WAITING;
+}
+
+function submitVote(p){
+	console.log(p);
 }

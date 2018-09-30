@@ -19,6 +19,8 @@ var players = [];
 var questionPairs = [];
 var questionNumber = 0;
 var currentQuestion = "????";
+var currentQuestionPlayerA = -1;
+var currentQuestionPlayerB = -1;
 var questionAnswerA = null;
 var questionAnswerB = null;
 var gameState = 0;
@@ -36,13 +38,16 @@ const GameStates = {
 	PRE_BATTLE          :  3,
 	BATTLE_START        :  4,
 	WAITING_FOR_ANSWERS :  5,
-	WAITING_FOR_VOTES   :  6
+	WAITING_FOR_VOTES   :  6,
+	SHOWING_VOTES       :  7
 };
 const TimeLimits = {
 	MAP_SCREEN          :  1.0,
 	PRE_BATTLE          :  1.0,
 	BATTLE_START        :  1.0,
-	WAITING_FOR_ANSWERS :  15.0
+	WAITING_FOR_ANSWERS :  15.0,
+	WAITING_FOR_VOTES   :  15.0,
+	SHOWING_VOTES       :  10.0
 }
 
 for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
@@ -198,8 +203,51 @@ function gameLoop(){
 				ctx.fillText(text, x, y);
 				
 				if(timer >= TimeLimits.WAITING_FOR_ANSWERS){
+					sendMessage({
+						type: "message",
+						action: "end-question",
+						source: "host",
+						playerIDA: questionPairs[i].playerIDA,
+						playerIDB: questionPairs[i].playerIDB,
+						answerA: questionAnswerA,
+						answerB: questionAnswerB,
+						question: questionPairs[i].question,
+						roomID: roomID
+					});
 					timer = 0;
 					gameState = GameStates.WAITING_FOR_VOTES;
+				}
+			break;
+
+			case GameStates.WAITING_FOR_VOTES:
+				// Draw question
+				ctx.fillStyle = "#000000";
+				ctx.font = "48px Life-Is-Messy";
+				var text = currentQuestion;
+				var x = canvas.width/2 - ctx.measureText(text).width/2;
+				var y = canvas.height*0.25 - 48/2;
+				ctx.fillText(text, x, y);
+
+				// Draw answers
+				text = questionAnswerA;
+				x = canvas.width*0.25 - ctx.measureText(text).width/2;
+				y = canvas.height*0.8 - 48/2;
+				ctx.fillText(text, x, y);
+
+				text = questionAnswerB;
+				x = canvas.width*0.75 - ctx.measureText(text).width/2;
+				y = canvas.height*0.8 - 48/2;
+				ctx.fillText(text, x, y);
+
+				// Draw timer
+				text = "" + (TimeLimits.WAITING_FOR_VOTES - timer).toFixed(1);
+				x = canvas.width/2 - ctx.measureText(text).width/2;
+				y = canvas.height/2 - 48/2;
+				ctx.fillText(text, x, y);
+				
+				if(timer >= TimeLimits.WAITING_FOR_VOTES){
+					timer = 0;
+					gameState = GameStates.SHOWING_VOTES;
 				}
 			break;
 		}
@@ -280,9 +328,16 @@ ws.onmessage = function(message) {
 					}
 				}
 			break;
+			case "answer":
+				if(msg.playerID == currentQuestionPlayerA){
+					questionAnswerA = msg.answer;
+				}
+				if(msg.playerID == currentQuestionPlayerB){
+					questionAnswerB = msg.answer;
+				}
+				console.log(questionAnswerA, questionAnswerB);
+			break;
 		}
-
-		console.log(players);
 	}
 	// console.log(msg);
 };
@@ -361,7 +416,7 @@ function getPlayerByPlayerID(playerID){
 }
 
 var questions = [
-	"Fill in the blank: Everyone who knows me know that I _____.",
+	"Fill in the blank: Everyone who knows me knows that I _____.",
 	"Fill in the blank: Making games is as easy as _____.",
 	"Fill in the blank: _____ got be fired from my last job.",
 	"Who would make a great president of the United States?",
@@ -425,6 +480,8 @@ function sendQuestion(i){
 		question: questionPairs[i].question
 	};
 	currentQuestion = questionPairs[i].question;
+	currentQuestionPlayerA = questionPairs[i].playerIDA;
+	currentQuestionPlayerB = questionPairs[i].playerIDB;
 	sendMessage(msg);
 }
 
