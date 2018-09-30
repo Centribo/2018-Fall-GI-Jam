@@ -26,6 +26,8 @@ var buttons = [];
 var name;
 var id;
 var playerID;
+var placement;
+var score;
 var currentQuestion = "";
 
 const GameStates = {
@@ -34,9 +36,10 @@ const GameStates = {
 	CONNECTING          :  1,
 	SETTING_NAME        :  2,
 	WAITING_FOR_START   :  3,
-	WAITING            :  4,
+	WAITING             :  4,
 	WAITING_FOR_ANSWER  :  5,
-	VOTING              :  6
+	VOTING              :  6,
+	GAME_OVER           :  7
 };
 
 // ******************
@@ -152,6 +155,34 @@ function gameLoop(){
 					ctx.fillRect(buttons[i].x, buttons[i].y, buttons[i].width, buttons[i].height);
 				}
 
+				ctx.fillStyle = "#000000";
+				text = answerA;
+				x = canvas.width/2 - ctx.measureText(text).width/2;
+				y = (ctx.canvas.height * 0.25 + ctx.canvas.height * 0.5)/2 + 24/2;
+				ctx.fillText(text, x, y);
+
+				ctx.fillStyle = "#000000";
+				text = answerB;
+				x = canvas.width/2 - ctx.measureText(text).width/2;
+				// y = (ctx.canvas.height * 0.8)/2 + 24/2;
+				y = (ctx.canvas.height/2) + (ctx.canvas.height*0.3/2) + 24/2;
+				ctx.fillText(text, x, y);
+			break;
+
+			case GameStates.GAME_OVER:
+				ctx.fillStyle = "#000000";
+				ctx.font = "48px Life-Is-Messy";
+				var text = name + ", you came #" + placement;
+				var x = canvas.width/2 - ctx.measureText(text).width/2;
+				var y = canvas.height * 0.2;
+				ctx.fillText(text, x, y);
+
+				ctx.fillStyle = "#000000";
+				ctx.font = "48px Life-Is-Messy";
+				text = "with " + score + " points!";
+				x = canvas.width/2 - ctx.measureText(text).width/2;
+				y = canvas.height * 0.8;
+				ctx.fillText(text, x, y);
 			break;
 		}
 		lastTime = currentTime - (deltaMilli % interval);
@@ -247,8 +278,8 @@ ws.onmessage = function(message) {
 		case "end-question":
 			inputBox.value = "";
 			buttons = [];
-			// if(playerID == msg.playerIDA || playerID == msg.playerIDB){
-			if(false){
+			if(playerID == msg.playerIDA || playerID == msg.playerIDB){
+			// if(false){
 				gameState = GameStates.WAITING;
 			} else {
 				answerA = msg.answerA;
@@ -259,14 +290,34 @@ ws.onmessage = function(message) {
 				var a = new Button(ctx.canvas.width * 0.25, ctx.canvas.height * 0.2, ctx.canvas.width * 0.5, ctx.canvas.height * 0.3, "#E1BF9B");
 				a.onclick = function (){
 					submitVote(msg.playerIDA);
+					deleteButton(a);
 				};
 				buttons.push(a);
 				var b = new Button(ctx.canvas.width * 0.25, ctx.canvas.height * 0.2 + ctx.canvas.height * 0.3, ctx.canvas.width * 0.5, ctx.canvas.height * 0.3, "#58340C");
 				b.onclick = function (){
 					submitVote(msg.playerIDB);
+					deleteButton(b);
 				};
 				buttons.push(b);
 			}
+		break;
+
+		case "end-voting":
+			buttons = [];
+			gameState = GameStates.WAITING;
+		break;
+
+		case "end-game":
+			for(i in msg.scores){
+				if(msg.scores[i].playerID == playerID){
+					placement = 0;
+					placement += i;
+					placement ++;
+					score = msg.scores[i].score;
+				}
+			}
+			gameState = GameStates.GAME_OVER;
+			ws.close();
 		break;
 	} //switch
 }; //onmessage
@@ -360,5 +411,14 @@ function submitAnswer(){
 }
 
 function submitVote(p){
-	console.log(p);
+	sendMessage({
+		type: "message",
+		action: "vote",
+		source: "player",
+		roomID: roomID,
+		playerID: playerID,
+		vote: p
+	});
+	inputBox.value = "";
+	gameState = GameStates.WAITING;
 }

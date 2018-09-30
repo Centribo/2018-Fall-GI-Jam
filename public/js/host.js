@@ -23,6 +23,7 @@ var currentQuestionPlayerA = -1;
 var currentQuestionPlayerB = -1;
 var questionAnswerA = null;
 var questionAnswerB = null;
+var votes = {};
 var gameState = 0;
 var mouseX = 0;
 var mouseY = 0;
@@ -39,7 +40,8 @@ const GameStates = {
 	BATTLE_START        :  4,
 	WAITING_FOR_ANSWERS :  5,
 	WAITING_FOR_VOTES   :  6,
-	SHOWING_VOTES       :  7
+	SHOWING_VOTES       :  7,
+	GAME_OVER           :  8
 };
 const TimeLimits = {
 	MAP_SCREEN          :  1.0,
@@ -65,8 +67,8 @@ if (typeof (canvas.getContext) !== undefined) {
 }
 
 function gameLoop(){
-	ctx.canvas.width  = window.innerWidth;
-	ctx.canvas.height = window.innerHeight;
+	// ctx.canvas.width  = window.innerWidth;
+	// ctx.canvas.height = window.innerHeight;
 	window.requestAnimationFrame(gameLoop);
 	
 	currentTime = (new Date()).getTime();
@@ -207,13 +209,21 @@ function gameLoop(){
 						type: "message",
 						action: "end-question",
 						source: "host",
-						playerIDA: questionPairs[i].playerIDA,
-						playerIDB: questionPairs[i].playerIDB,
+						playerIDA: currentQuestionPlayerA,
+						playerIDB: currentQuestionPlayerB,
 						answerA: questionAnswerA,
 						answerB: questionAnswerB,
-						question: questionPairs[i].question,
+						question: currentQuestion,
 						roomID: roomID
 					});
+
+					for(let i = 0; i < ROOM_SIZE; i++){
+						votes = {};
+						if(i != currentQuestionPlayerA && i != currentQuestionPlayerB){
+							votes[i] = null;
+						}
+					}
+
 					timer = 0;
 					gameState = GameStates.WAITING_FOR_VOTES;
 				}
@@ -246,8 +256,71 @@ function gameLoop(){
 				ctx.fillText(text, x, y);
 				
 				if(timer >= TimeLimits.WAITING_FOR_VOTES){
+					sendMessage({
+						type: "message",
+						action: "end-voting",
+						source: "host",
+						roomID: roomID
+					});
+
+					for(let i = 0; i < ROOM_SIZE; i++){
+						if(votes[i] != null){
+							addScore(votes[i], 100);
+						}
+					}
+
 					timer = 0;
 					gameState = GameStates.SHOWING_VOTES;
+				}
+			break;
+			case GameStates.SHOWING_VOTES:
+				ctx.fillStyle = "#000000";
+				ctx.font = "24px Life-Is-Messy";
+				var text = "";
+				var startX = ctx.canvas.width/2;
+				var startY = ctx.canvas.height*0.3;
+
+				var x = 0;
+				var y = 0;
+
+				for(let i = 0; i < ROOM_SIZE; i++){
+					if(votes[i] != null){
+						text = getPlayerByPlayerID(i).name + " voted for " + getPlayerByPlayerID(votes[i]).name;
+						x = (-1) * (ctx.measureText(text).width / 2);
+						y = i * 25;
+						ctx.fillText(text, startX + x, startY + y);
+					}
+				}
+
+				if(timer >= TimeLimits.SHOWING_VOTES){
+					votes = {};
+					if(questionNumber >= ROOM_SIZE/2){
+						endGame();
+					} else {
+						timer = 0;
+						gameState = GameStates.MAP_SCREEN;
+					}
+				}
+			break;
+
+			case GameStates.GAME_OVER:			
+				ctx.fillStyle = "#000000";
+				ctx.font = "24px Life-Is-Messy";
+				var text = "";
+				var startX = ctx.canvas.width/2;
+				var startY = ctx.canvas.height*0.3;
+
+				var x = 0;
+				var y = 0;
+
+				for(i in players){
+					var placement = 0;
+					placement += i;
+					placement ++;
+					text = "#" + placement + ": " + players[i].name + " with " + players[i].score + " points!";
+					x = (-1) * (ctx.measureText(text).width / 2);
+					y = i * 25;
+					ctx.fillText(text, startX + x, startY + y);
 				}
 			break;
 		}
@@ -299,7 +372,8 @@ ws.onmessage = function(message) {
 				var playerEntry = {
 					id: msg.id,
 					name: null,
-					playerID: playerID
+					playerID: playerID,
+					score: 0
 				};
 				players.push(playerEntry);
 
@@ -336,6 +410,9 @@ ws.onmessage = function(message) {
 					questionAnswerB = msg.answer;
 				}
 				console.log(questionAnswerA, questionAnswerB);
+			break;
+			case "vote":
+				votes[msg.playerID] = msg.vote;
 			break;
 		}
 	}
@@ -483,6 +560,38 @@ function sendQuestion(i){
 	currentQuestionPlayerA = questionPairs[i].playerIDA;
 	currentQuestionPlayerB = questionPairs[i].playerIDB;
 	sendMessage(msg);
+}
+
+function addScore(playerID, score){
+	for(i in players){
+		if(playerID == players[i].playerID){
+			players[i].score += score;
+		}
+	}
+}
+
+function endGame(){
+	players.sort(playerScoreCompare);
+	console.log(players);
+	gameState = GameStates.GAME_OVER;
+	sendMessage({
+		type: "message",
+		action: "end-game",
+		source: "host",
+		roomID: roomID,
+		scores: players
+	});
+	ws.close();
+}
+
+function playerScoreCompare(a, b){
+	if(a.score > b.score){
+		return -1;
+	}
+	if(a.score < b.score){
+		return 1;
+	}
+	return 0;
 }
 
 // wsServer.on("request", function(req){
