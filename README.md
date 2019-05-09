@@ -1,3 +1,5 @@
+![Logo](./public/art/logo.png)
+
 # Otternament
 
 Play [here](https://otternament.herokuapp.com/)!
